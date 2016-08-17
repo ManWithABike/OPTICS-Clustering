@@ -4,7 +4,7 @@
 
 ##Introduction
 This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. .
-For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube}(https://www.youtube.com/watch?v=8kJjgowewOs).
+For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
 It relies on the boost RTree implementation in order to efficiently find neighbourhoods of a given point.
 
 
@@ -13,7 +13,7 @@ Suppose you have a set of points in R^n, described in cartesion coordinates, and
 Then you might consider using this library, as it offers an interface that lets you draw a [reachability-plot]() with two lines of code:
 
 ```cpp
-#include<optics.h>
+#include <optics.h>
 
 typedef std::vector<double> point; //A list of n cartesian coordinates makes a point
 std::vector<point> points; //Your list of points goes here
@@ -34,12 +34,11 @@ Three lightweight header-only libraries:
 And boost (::geometry and ::index, to be exact)  
 4. [Boost](http://www.boost.org/)
 
-In order to do so, the points of the database are (linearly) ordered such that points which are spatially closest become neighbors in the ordering. Additionally, a special distance is stored for each point that represents the density that needs to be accepted for a cluster in order to have both points belong to the same cluster.
 
 ##Disclaimer
 
-The functionality in this library initially grew due to my personal need for it while using C++ on a regular basis. I try my best to make it error free and as comfortable to use as I can. The API still might change in the future. If you have any suggestions, find errors, miss some functions or want to give general feedback/criticism, I'd love to hear from you. Of course, contributions are also very welcome.
+The functionality in this library initially grew due to my personal need for it while using C++ on a regular basis. I try my best to make it error free and as comfortable to use as I can. The API still might change in the future. If you have any suggestions, find errors, miss some functions or want to give general feedback/criticism, I'd love to hear from you. Of course, [contributions](https://github.com/CrikeeIP/OPTICS-Clustering/pulls) are also very welcome.
 
 ##License
 
-Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
