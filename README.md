@@ -10,7 +10,7 @@ It relies on the boost RTree implementation in order to efficiently find neighbo
 
 ##Usage
 Suppose you have a set of points in R^n, described in cartesion coordinates, and wonder if they have a cluster structure.
-Then you might consider using this library, as it offers an interface that lets you draw a [reachability-plot]() with two lines of code:
+Then you might consider using this library, as it offers an interface that lets you draw a [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with two lines of code:
 
 ```cpp
 #include <optics.h>
