@@ -17,7 +17,28 @@
 #include <boost/geometry/index/rtree.hpp>
 #pragma warning( pop )
 
-#include <D:/_transVM/GitRepositories/CImg/CImg/CImg.h>
+#include <CImg/CImg.h>
+
+
+
+namespace optics {
+
+
+struct reachability_dist {
+	reachability_dist( std::size_t point_index, double reach_dist ) : point_index( point_index ), reach_dist( reach_dist ) {}
+
+	std::size_t point_index;
+	double reach_dist;
+};
+
+inline bool operator<( const reachability_dist& lhs, const reachability_dist& rhs ) {
+	assert( lhs.point_index != rhs.point_index );
+	return (lhs.reach_dist == rhs.reach_dist) ? (lhs.point_index < rhs.point_index) : (lhs.reach_dist < rhs.reach_dist);
+}
+
+
+
+namespace internal{
 
 
 namespace bg = boost::geometry;
@@ -34,20 +55,6 @@ using Box = typename bg::model::box<Pt<T, N>>;
 
 template<typename T, std::size_t N>
 using RTree = typename bgi::rtree<TreeValues<T, N>, bgi::quadratic<25>>; //TODO: Number of elems per node configurable?
-
-
-
-struct reachability_dist {
-	reachability_dist( std::size_t point_index, double reach_dist ) : point_index( point_index ), reach_dist( reach_dist ) {}
-
-	std::size_t point_index;
-	double reach_dist;
-};
-
-inline bool operator<( const reachability_dist& lhs, const reachability_dist& rhs ) {
-	assert( lhs.point_index != rhs.point_index );
-	return (lhs.reach_dist == rhs.reach_dist) ? (lhs.point_index < rhs.point_index) : (lhs.reach_dist < rhs.reach_dist);
-}
 
 
 
@@ -158,9 +165,9 @@ T pop_from_set( std::set<T>& set ) {
 
 
 template<typename T, std::size_t N>
-void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist, 
-			 const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds,
-			 const double epsilon, const std::size_t min_pts ) {
+void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist,
+				const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds,
+				const double epsilon, const std::size_t min_pts ) {
 	for ( const auto& o : neighbor_indices ) {
 		if ( processed[o] ) { continue; }
 		double new_reachability_dist = fplus::max( core_dist, geom::dist( point, points[o] ) );
@@ -178,6 +185,9 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 		}
 	}
 }
+
+} //namespace internal
+
 
 
 template<typename T, std::size_t N>
@@ -206,7 +216,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 		update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds, epsilon, min_pts );
 
-		while( !seeds.empty() ) {
+		while ( !seeds.empty() ) {
 			reachability_dist s = pop_from_set( seeds );
 			assert( processed[s.point_index] == false );
 			processed[s.point_index] = true;
@@ -225,7 +235,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 	//sanity checks
 	assert( ordered_list.size() == points.size() );
-	assert( fplus::all_unique (ordered_list ) );
+	assert( fplus::all_unique( ordered_list ) );
 
 	//merge reachabilities into ordered list
 	auto result = fplus::transform( [&reachability]( std::size_t point_idx ) -> reachability_dist {
@@ -235,14 +245,14 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 }
 
 
-inline std::vector<std::vector<std::size_t>> make_clusters( const std::vector<reachability_dist>& reach_dists, double reachability_threshold) {
+inline std::vector<std::vector<std::size_t>> make_clusters( const std::vector<reachability_dist>& reach_dists, double reachability_threshold ) {
 	assert( reach_dists.front().reach_dist < 0.0 );
 	std::vector<std::vector<std::size_t>> result;
 	for ( const auto& r : reach_dists ) {
 		if ( r.reach_dist < 0.0 || r.reach_dist >= reachability_threshold ) {
 			result.push_back( { r.point_index } );
 		}
-		else{
+		else {
 			result.back().push_back( r.point_index );
 		}
 	}
@@ -270,12 +280,12 @@ inline void export_reachability_dists( const std::vector<reachability_dist>& rea
 		}, reach_dists ).reach_dist;
 		no_dist += 1;
 	}
-	
+
 	//write csv header
 	stream << "PointIndex;ReachabilityDistance" << std::endl;
 	//write body
 	for ( const auto& x : reach_dists ) {
-		stream << x.point_index << ";" << (x.reach_dist < 0? no_dist : x.reach_dist) << std::endl;
+		stream << x.point_index << ";" << (x.reach_dist < 0 ? no_dist : x.reach_dist) << std::endl;
 	}
 }
 
@@ -283,17 +293,17 @@ inline void export_reachability_dists( const std::vector<reachability_dist>& rea
 
 inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_dists, const std::string& img_file_name ) {
 	namespace cil = cimg_library;
-	
+
 	double no_dist = fplus::maximum_on( []( const reachability_dist& r ) -> double {
-			return r.reach_dist;
-		}, reach_dists ).reach_dist +1;
+		return r.reach_dist;
+	}, reach_dists ).reach_dist + 1;
 
 	cil::CImg<double> graph_img( reach_dists.size(), 1, 1, 1 );
 	for ( std::size_t i = 0; i < reach_dists.size(); i++ ) {
 		graph_img( i, 0, 0, 0 ) = reach_dists[i].reach_dist < 0 ? no_dist : reach_dists[i].reach_dist;
 	}
 
-	cil::CImg<double> plot_img( std::min(std::size_t(4096),reach_dists.size()), 256, 1, 1, 0 );
+	cil::CImg<double> plot_img( std::min( std::size_t( 4096 ), reach_dists.size() ), 256, 1, 1, 0 );
 	double col = 255.0;
 	double* col_ptr = &col;
 
@@ -302,3 +312,5 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 	plot_img.save( img_file_name.c_str() );
 	return;
 }
+
+} //namespace optics
