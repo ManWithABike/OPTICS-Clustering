@@ -200,7 +200,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 	//std::vector<double> core_dist( points.size(), -1.0f );
 
 	//the rtree for fast nearest neighbour search
-	auto rtree = initialize_rtree( points );
+	auto rtree = internal::initialize_rtree( points );
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {
 		if ( processed[point_idx] == true ) continue;
@@ -208,27 +208,27 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 		ordered_list.push_back( point_idx );
 		std::set<reachability_dist> seeds;
 
-		auto neighbor_indices = find_neighbor_indices( points[point_idx], points, epsilon, rtree );
+		auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], points, epsilon, rtree );
 
-		fplus::maybe<double> core_dist_m = compute_core_dist( points[point_idx], points, neighbor_indices, epsilon, min_pts );
+		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, epsilon, min_pts );
 		if ( !core_dist_m.is_just() ) { continue; }
 		double core_dist = core_dist_m.unsafe_get_just();
 
-		update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds, epsilon, min_pts );
+		internal::update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds, epsilon, min_pts );
 
 		while ( !seeds.empty() ) {
-			reachability_dist s = pop_from_set( seeds );
+			reachability_dist s = internal::pop_from_set( seeds );
 			assert( processed[s.point_index] == false );
 			processed[s.point_index] = true;
 			ordered_list.push_back( s.point_index );
 
-			auto s_neighbor_indices = find_neighbor_indices( points[s.point_index], points, epsilon, rtree );
+			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], points, epsilon, rtree );
 
-			auto s_core_dist_m = compute_core_dist( points[s.point_index], points, s_neighbor_indices, epsilon, min_pts );
+			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, epsilon, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
 			double s_core_dist = s_core_dist_m.unsafe_get_just();
 
-			update( points[s.point_index], points, s_neighbor_indices, s_core_dist, processed, reachability, seeds, epsilon, min_pts );
+			internal::update( points[s.point_index], points, s_neighbor_indices, s_core_dist, processed, reachability, seeds, epsilon, min_pts );
 		}
 
 	}
