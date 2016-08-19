@@ -245,6 +245,24 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 }
 
 
+template<typename T, std::size_t dimension>
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::vector<T>>& points, const std::size_t min_pts, const T& epsilon ) {
+	if ( points.empty() ) { return{} };
+	assert( dimension != 0 );
+	
+	std::vector<geom::Vec<T, dimension>> geom_points(points.size());
+	for ( const auto& p : points ) {
+		if ( p.size() != dimension ) {
+			throw(std::exception( "compute_reachability_dists(): All Points must have the same dimension (i.e. number of coordinates) in order to be clustered." ));
+			return;
+		}
+		geom_points.push_back( geom::Vec<T, dimension>( p ) );
+	}
+		
+	return compute_reachability_dists( geom_points, min_pts, epsilon );
+}
+
+
 inline std::vector<std::vector<std::size_t>> make_clusters( const std::vector<reachability_dist>& reach_dists, double reachability_threshold ) {
 	assert( reach_dists.front().reach_dist < 0.0 );
 	std::vector<std::vector<std::size_t>> result;
