@@ -11,8 +11,9 @@ wget https://raw.githubusercontent.com/CrikeeIP/Geometry/master/include/geometry
 cd ..
 cd ..
 cd ..
-cd ..
 
+mkdir dependencies
+cd dependencies
 git clone https://github.com/Dobiasd/FunctionalPlus
 cd FunctionalPlus
 mkdir build
@@ -21,9 +22,11 @@ cmake ..
 sudo make install
 cd ..
 cd ..
+cd .. 
+rem dependencies
 
 cd OPTICS-Clustering
 cd test
 
-g++ --std=c++11 -lX11 -lpthread -I../include main.cpp
+g++ --std=c++11 -I../include main.cpp -lX11 -lpthread
 ./a.out
