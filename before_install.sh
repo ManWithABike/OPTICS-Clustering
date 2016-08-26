@@ -1,19 +1,22 @@
-cd OPTICS-Clustering
-cd include
-cd optics
-mkdir CImg
-cd Cimg
-wget https://raw.githubusercontent.com/dtschump/CImg/master/CImg.h
-cd ..
-mkdir Geometry
-cd Geometry
-wget https://raw.githubusercontent.com/CrikeeIP/Geometry/master/include/geometry/geometry.h
-cd ..
-cd ..
-cd ..
+
+export GTEST_VERSION=master
+export GTEST=googletest-${GTEST_VERSION}
+wget https://github.com/google/googletest/archive/${GTEST_VERSION}.tar.gz
+tar -xzvf *.tar.gz
+cd ${GTEST}
+mkdir build && cd build
+cmake ..
+make -j4 && sudo make install && cd ../..
+
 
 mkdir dependencies
 cd dependencies
+mkdir include
+cd include
+wget https://raw.githubusercontent.com/dtschump/CImg/master/CImg.h
+wget https://raw.githubusercontent.com/CrikeeIP/Geometry/master/include/geometry/geometry.h
+cd ..
+
 git clone https://github.com/Dobiasd/FunctionalPlus
 cd FunctionalPlus
 mkdir build
@@ -22,11 +25,3 @@ cmake ..
 sudo make install
 cd ..
 cd ..
-cd .. 
-rm dependencies
-
-cd OPTICS-Clustering
-cd test
-
-g++ --std=c++11 -I../include main.cpp -lX11 -lpthread
-./a.out
