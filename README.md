@@ -35,6 +35,15 @@ And boost (::geometry and ::index, to be exact)
 4. [Boost](http://www.boost.org/)
 
 
+##Installation
+Before the installation, make sure you have installed Boost.
+Afterwards, clone this repository
+```sh
+git clone https://github.com/CrikeeIP/OPTICS-Clustering
+```
+and execute the the *install.sh* script delivered with it.
+
+
 ##Disclaimer
 
 The functionality in this library initially grew due to my personal need for it while using C++ on a regular basis. I try my best to make it error free and as comfortable to use as I can. The API still might change in the future. If you have any suggestions, find errors, miss some functions or want to give general feedback/criticism, I'd love to hear from you. Of course, [contributions](https://github.com/CrikeeIP/OPTICS-Clustering/pulls) are also very welcome.
