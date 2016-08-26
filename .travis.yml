@@ -30,4 +30,5 @@ script:
     - ./build_and_test.sh
 
 before_install:
+    - chmod +x ./before_install.sh
     - ./before_install.sh
