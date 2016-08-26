@@ -8,7 +8,7 @@ message(STATUS "===( ${PROJECT_NAME} ${PROJECT_VERSION} )===")
 option(UNITTEST "Build unit tests" OFF)
 
 
-install(DIRECTORY include/Optics DESTINATION include)
+install(DIRECTORY include/optics DESTINATION include)
 
 add_definitions(-Wall
                 -Wextra
