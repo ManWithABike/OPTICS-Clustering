@@ -17,8 +17,8 @@
 #include <boost/geometry/index/rtree.hpp>
 #pragma warning( pop )
 
-#include <CImg/CImg.h>
-
+#include "CImg/CImg.h"
+#include "Geometry/geometry.h"
 
 
 namespace optics {
