@@ -23,7 +23,7 @@ sudo make install
 cd ..
 cd ..
 cd .. 
-rem dependencies
+rm dependencies
 
 cd OPTICS-Clustering
 cd test
