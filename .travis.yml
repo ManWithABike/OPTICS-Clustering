@@ -31,5 +31,7 @@ script:
     - ./build_and_test.sh
 
 before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install libboost-dev
     - chmod +x ./before_install.sh
     - ./before_install.sh
