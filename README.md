@@ -19,7 +19,7 @@ typedef std::vector<double> point; //A list of n cartesian coordinates makes a p
 std::vector<point> points; //Your list of points goes here
 
 int main(){
-   auto reach_dists = optics::compute_reachability_dists( points, 10, 100 );
+   auto reach_dists = optics::compute_reachability_dists( points, 5, 40 );
    optics::draw_reachability_plot( reach_dists, "D:/reachdists.bmp" );
 }
 ```
