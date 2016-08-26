@@ -5,7 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 
 
-#include<vector>
+#include "CImg/CImg.h"
+#include "Geometry/geometry.h"
 
 #include <fplus/fplus.h>
 
@@ -17,8 +18,9 @@
 #include <boost/geometry/index/rtree.hpp>
 #pragma warning( pop )
 
-#include "CImg/CImg.h"
-#include "Geometry/geometry.h"
+#include<vector>
+#include <exception>
+
 
 
 namespace optics {
@@ -74,7 +76,7 @@ struct set_boost_point_coords<T, N, 0>
 {
 	static inline int set( Pt<T, N>& boost_pt, const geom::Vec<T, N>& coords )
 	{
-		bg::set<I>( boost_pt, coords[I] );
+		bg::set<0>( boost_pt, coords[0] );
 		return 0;
 	}
 };
@@ -191,7 +193,7 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 
 
 template<typename T, std::size_t N>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, N>>& points, const std::size_t min_pts, const T& epsilon ) {
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, N>>& points, const std::size_t min_pts, double epsilon ) {
 	//algorithm tracker
 	std::vector<bool> processed( points.size(), false );
 	std::vector<std::size_t> ordered_list;
@@ -246,15 +248,15 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 
 template<typename T, std::size_t dimension>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::vector<T>>& points, const std::size_t min_pts, const T& epsilon ) {
-	if ( points.empty() ) { return{} };
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::vector<T>>& points, const std::size_t min_pts, double epsilon ) {
+	if ( points.empty() ) { return{}; }
 	assert( dimension != 0 );
 	
 	std::vector<geom::Vec<T, dimension>> geom_points(points.size());
 	for ( const auto& p : points ) {
 		if ( p.size() != dimension ) {
-			throw(std::exception( "compute_reachability_dists(): All Points must have the same dimension (i.e. number of coordinates) in order to be clustered." ));
-			return;
+			assert(false); //TODO:Exception
+			//throw(std::exception( std::string("compute_reachability_dists(): All Points must have the same dimension (i.e. number of coordinates) in order to be clustered.") ));
 		}
 		geom_points.push_back( geom::Vec<T, dimension>( p ) );
 	}
