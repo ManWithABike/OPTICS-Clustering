@@ -10,20 +10,6 @@ option(UNITTEST "Build unit tests" OFF)
 
 install(DIRECTORY include/optics DESTINATION include)
 
-add_definitions(-Wall
-                -Wextra
-                -pedantic
-                -Wshadow
-                -Werror
-                -Weffc++
-                -Wconversion
-                -Wsign-conversion
-                -Wctor-dtor-privacy
-                -Wreorder
-                -Wold-style-cast
-                -Wparentheses
-                )
-
 find_package(Threads REQUIRED)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
