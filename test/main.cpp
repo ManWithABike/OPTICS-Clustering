@@ -8,6 +8,6 @@ int main(){
                {-1,0}, {1,0}, {0,1},                     //cluster 2
                {-100,-100}, {-102,-100}, {-101,-101}     //cluster 3
    };
-   auto reach_dists = optics::compute_reachability_dists( points, 10, 100 );
+   auto reach_dists = optics::compute_reachability_dists( points, 2, 10 );
    optics::draw_reachability_plot( reach_dists, "D:/reachdists.bmp" );
 }
