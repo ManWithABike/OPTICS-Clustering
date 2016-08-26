@@ -15,6 +15,8 @@ macro(_add_test _NAME)
     target_link_libraries(${_NAME} ${GTest_LIBRARIES}
                                     ${GMock_LIBRARIES}
                                     ${CMAKE_THREAD_LIBS_INIT}
+									m
+									X11
                                     )
 endmacro()
 
