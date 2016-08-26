@@ -1,4 +1,7 @@
 
+mkdir dependencies
+cd dependencies
+
 export GTEST_VERSION=master
 export GTEST=googletest-${GTEST_VERSION}
 wget https://github.com/google/googletest/archive/${GTEST_VERSION}.tar.gz
@@ -8,9 +11,6 @@ mkdir build && cd build
 cmake ..
 make -j4 && sudo make install && cd ../..
 
-
-mkdir dependencies
-cd dependencies
 mkdir include
 cd include
 wget https://raw.githubusercontent.com/dtschump/CImg/master/CImg.h
@@ -23,5 +23,6 @@ mkdir build
 cd build
 cmake ..
 sudo make install
+cd ..
 cd ..
 cd ..
