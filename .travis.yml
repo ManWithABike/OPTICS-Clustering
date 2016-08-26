@@ -27,6 +27,7 @@ matrix:
           sources: *sources
 
 script:
+    - chmod +x ./build_and_test.sh
     - ./build_and_test.sh
 
 before_install:
