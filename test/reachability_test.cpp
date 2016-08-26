@@ -21,5 +21,6 @@ TEST(reachability_test, a)
 	};
 	auto reach_dists = optics::compute_reachability_dists<double,2>( points, 2, 10 );
 	optics::draw_reachability_plot( reach_dists, "reachdists.bmp" );
-	EXPECT_THAT(true); // todo
+	
+	EXPECT_THAT(42, Eq(42)); // todo
 }
