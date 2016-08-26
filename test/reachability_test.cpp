@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <Optics/optics.h>
+#include <optics/optics.h>
 #include <vector>
 
 using namespace testing;
