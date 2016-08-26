@@ -39,15 +39,15 @@ And boost (::geometry and ::index, to be exact)
 Before the installation, make sure you have installed Boost.
 Subsequently, you can use one of the following two alternative ways to install OPTICS-Clustering:
 
-***Alternative 1:***
+***Alternative 1:***  
 Clone this repository
 ```sh
 git clone https://github.com/CrikeeIP/OPTICS-Clustering
 ```
 and execute the the *install.sh* script delivered with it.
 
-***Alternative 2:***
-If you're uncomfortable running who-knows-what-they'll-do foreign scripts (and are too tired to check them before executing), you can do it manually:
+***Alternative 2:***  
+If you're uncomfortable running who-knows-what-they'll-do foreign scripts (and are too tired to check them before execution), you can do it manually:
 ```sh
 #Clone the reporitory
 git clone https://github.com/CrikeeIP/OPTICS-Clustering
