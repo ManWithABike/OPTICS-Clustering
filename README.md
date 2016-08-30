@@ -9,7 +9,7 @@
 ##Introduction
 This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. .
 For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
-It relies on the boost RTree implementation in order to efficiently find neighbourhoods of a given point.
+It relies on the Boost RTree implementation in order to efficiently find neighbourhoods of a given point.
 
 
 ##Usage
@@ -51,7 +51,7 @@ git clone https://github.com/CrikeeIP/OPTICS-Clustering
 and execute the the *install.sh* script delivered with it.
 
 ***Alternative 2:***  
-If you're uncomfortable running who-knows-what-they'll-do foreign scripts (and are too tired to check them before execution), you can do it manually:
+If you're uncomfortable running who-knows-what-they'll-do foreign scripts (and are too tired to check them before execution), you can also do it manually:
 ```sh
 #Clone the reporitory
 git clone https://github.com/CrikeeIP/OPTICS-Clustering
