@@ -1,9 +1,7 @@
 // Copyright Ingo Proff 2016.
 // https://github.com/CrikeeIP/OPTICS-Clustering
-// Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-
+// Distributed under the MIT Software License (X11 license).
+// (See accompanying file LICENSE)
 
 #include "CImg/CImg.h"
 #include "Geometry/geometry.h"
