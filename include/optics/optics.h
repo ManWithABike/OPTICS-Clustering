@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE)
 
 #include "CImg/CImg.h"
-#include "Geometry/geometry.h"
+#include "geometry/geometry.h"
 
 #include <fplus/fplus.h>
 
