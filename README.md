@@ -9,7 +9,7 @@
 ##Introduction
 This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. .
 For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
-It relies on the Boost RTree implementation in order to efficiently find neighbourhoods of a given point.
+This implementation relies on the Boost RTree in order to efficiently find neighbourhoods of a given point.
 
 
 ##Usage
