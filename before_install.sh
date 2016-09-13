@@ -14,8 +14,8 @@ mkdir include
 cd include
 sudo mkdir /usr/local/include/CImg
 sudo wget https://raw.githubusercontent.com/dtschump/CImg/master/CImg.h -O /usr/local/include/CImg/CImg.h
-sudo mkdir /usr/local/include/Geometry
-sudo wget https://raw.githubusercontent.com/CrikeeIP/Geometry/master/include/geometry/geometry.h -O /usr/local/include/Geometry/geometry.h
+sudo mkdir /usr/local/include/geometry
+sudo wget https://raw.githubusercontent.com/CrikeeIP/Geometry/master/include/geometry/geometry.h -O /usr/local/include/geometry/geometry.h
 cd ..
 
 git clone https://github.com/Dobiasd/FunctionalPlus
