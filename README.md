@@ -14,7 +14,7 @@ This implementation relies on the Boost RTree in order to efficiently find neigh
 
 ##Usage
 Suppose you have a set of points in R^n, described in cartesion coordinates, and wonder if they have a cluster structure.
-Then you might consider using this library, as it offers an interface that lets you draw a [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with two lines of code:
+Then you might consider using this library, as it offers an interface that lets you extract threshold-clusters *and* draw the corresponding [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with three lines of code:
 
 ```cpp
 #include <optics/optics.h>
@@ -23,7 +23,8 @@ typedef std::vector<double> point; //A list of n cartesian coordinates makes a p
 std::vector<point> points; //Your list of points goes here
 
 int main(){
-   auto reach_dists = optics::compute_reachability_dists( points, 5, 40 );
+   auto reach_dists = optics::compute_reachability_dists<T,N>( points, min_pts, epsilon );
+   optics::make_clusters( reach_dists, threshold );
    optics::draw_reachability_plot( reach_dists, "./reachdists.bmp" );
 }
 ```
@@ -40,7 +41,7 @@ And boost (::geometry and ::index, to be exact)
 
 
 ##Installation
-Before the installation, make sure you have installed Boost.
+Before the installation, make sure you have installed [Boost](http://www.boost.org/).
 Subsequently, you can use one of the following two alternative ways to install OPTICS-Clustering:
 
 ***Alternative 1:***  
