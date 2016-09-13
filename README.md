@@ -17,14 +17,14 @@ Suppose you have a set of points in R^n, described in cartesion coordinates, and
 Then you might consider using this library, as it offers an interface that lets you draw a [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with two lines of code:
 
 ```cpp
-#include <optics.h>
+#include <optics/optics.h>
 
 typedef std::vector<double> point; //A list of n cartesian coordinates makes a point
 std::vector<point> points; //Your list of points goes here
 
 int main(){
    auto reach_dists = optics::compute_reachability_dists( points, 5, 40 );
-   optics::draw_reachability_plot( reach_dists, "D:/reachdists.bmp" );
+   optics::draw_reachability_plot( reach_dists, "./reachdists.bmp" );
 }
 ```
 
