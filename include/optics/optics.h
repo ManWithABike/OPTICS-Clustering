@@ -322,8 +322,8 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 	}
 
 	cil::CImg<double> plot_img( std::min( std::size_t( 4096 ), reach_dists.size() ), 256, 1, 1, 0 );
-	double col = 255.0;
-	double* col_ptr = &col;
+	float col = 255.0;
+	float* col_ptr = &col;
 
 	plot_img.draw_graph( graph_img, col_ptr );
 
