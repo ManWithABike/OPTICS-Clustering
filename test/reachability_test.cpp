@@ -1,8 +1,7 @@
-// Copyright 2015, Tobias Hermann and the FunctionalPlus contributors.
-// https://github.com/Dobiasd/FunctionalPlus
-// Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+// Copyright 2016, Ingo Proff
+// https://github.com/CrikeeIP/OPTICS-CLustering
+// Distributed under the MIT Software License (X11License)
+//(See accompanying file LICENSE)
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
