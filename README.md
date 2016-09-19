@@ -92,7 +92,8 @@ g++ --std=c++11 -I../include main.cpp -lX11 -lpthread
 
 ##Disclaimer
 
-The functionality in this library initially grew due to my personal need for it while using C++ on a regular basis. I try my best to make it error free and as comfortable to use as I can. The API still might change in the future. If you have any suggestions, find errors, miss some functions or want to give general feedback/criticism, I'd love to hear from you. Of course, [contributions](https://github.com/CrikeeIP/OPTICS-Clustering/pulls) are also very welcome.
+This librarys functionality initially grew due to my personal need for it - an easy to use clustering algorithm which does not need to know the number of clusters a priori.
+I try my best to make it error free and as comfortable to use as I can. The API still might change in the future. If you have any suggestions, find errors, miss some functions or want to give general feedback/criticism, I'd love to hear from you. Of course, [contributions](https://github.com/CrikeeIP/OPTICS-Clustering/pulls) are also very welcome.
 
 ##License
 
