@@ -2,7 +2,7 @@
 
 [travis]: https://travis-ci.org/CrikeeIP/OPTICS-Clustering
 
-# OPTICS-Clustering
+# OPTICS-Clustering (UNDER CONSTRUCTION)
 
 **Ordering points to identify the clustering structure (OPTICS)** is an algorithm for finding density-based clusters in spatial data. It was [presented](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/background/OPTICS.pdf) by Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel and Jörg Sander in 1999.
 
