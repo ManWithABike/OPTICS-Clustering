@@ -6,7 +6,7 @@
 #include "CImg/CImg.h"
 #include "geometry/geometry.h"
 
-#include <fplus/fplus.h>
+#include <fplus/fplus.hpp>
 
 #pragma warning( push )
 #pragma warning( disable: 4503 )
