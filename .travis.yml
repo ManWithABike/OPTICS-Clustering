@@ -1,4 +1,4 @@
-language: generic
+language: cpp
 
 dist: trusty
 sudo: required
@@ -12,7 +12,9 @@ matrix:
       addons:
         apt:
           packages:
+            - gcc-6
             - g++-6
+            - cmake
           sources: &sources
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise
@@ -58,6 +60,7 @@ matrix:
 
 
 before_install:
+    - gcc -v && g++ -v && cmake --version
     - sudo apt-get update -qq
     - sudo apt-get install libboost-dev
     - chmod +x ./before_install.sh
