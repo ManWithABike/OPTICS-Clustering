@@ -106,7 +106,6 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 
 template<typename T, std::size_t N>
 std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, std::vector<geom::Vec<T, N>> points, T epsilon, const RTree<T, N>& rtree ) {
-	auto point_boost = geom_to_boost_point( point );
 	//produce search box
 	geom::Vec<T, N> eps_vec( epsilon );
 	geom::Vec<T, N> corner1 = point - eps_vec;
@@ -135,7 +134,7 @@ std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, st
 
 
 template<typename T, std::size_t N>
-fplus::maybe<double> compute_core_dist( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double epsilon, const std::size_t min_pts ) {
+fplus::maybe<double> compute_core_dist( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const std::size_t min_pts ) {
 
 	if ( neighbor_indices.size() < min_pts ) { return{}; }
 
@@ -170,7 +169,7 @@ T pop_from_set( std::set<T>& set ) {
 template<typename T, std::size_t N>
 void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist,
 				const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds,
-				const double epsilon, const std::size_t min_pts ) {
+			) {
 	for ( const auto& o : neighbor_indices ) {
 		if ( processed[o] ) { continue; }
 		double new_reachability_dist = fplus::max( core_dist, geom::dist( point, points[o] ) );
@@ -213,11 +212,11 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 		auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], points, epsilon, rtree );
 
-		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, epsilon, min_pts );
+		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, min_pts );
 		if ( !core_dist_m.is_just() ) { continue; }
 		double core_dist = core_dist_m.unsafe_get_just();
 
-		internal::update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds, epsilon, min_pts );
+		internal::update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds );
 
 		while ( !seeds.empty() ) {
 			reachability_dist s = internal::pop_from_set( seeds );
@@ -227,11 +226,11 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], points, epsilon, rtree );
 
-			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, epsilon, min_pts );
+			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
 			double s_core_dist = s_core_dist_m.unsafe_get_just();
 
-			internal::update( points[s.point_index], points, s_neighbor_indices, s_core_dist, processed, reachability, seeds, epsilon, min_pts );
+			internal::update( points[s.point_index], points, s_neighbor_indices, s_core_dist, processed, reachability, seeds );
 		}
 
 	}
