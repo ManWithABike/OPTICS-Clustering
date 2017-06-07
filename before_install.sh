@@ -29,4 +29,4 @@ cp -r ./include /usr/local/include/
 	./compile_and_run.sh
 	echo "--------- Tests successfully completed ---------"
 
-cd..
+cd ..
