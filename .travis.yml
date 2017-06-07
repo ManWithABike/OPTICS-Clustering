@@ -60,7 +60,6 @@ matrix:
 
 
 before_install:
-    - gcc -v && g++ -v && cmake --version
     - sudo apt-get update -qq
     - sudo apt-get install libboost-dev
     - chmod +x ./before_install.sh
