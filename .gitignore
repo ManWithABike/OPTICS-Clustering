@@ -28,6 +28,7 @@
 *.out
 *.app
 run
+reachdists.bmp
 
 # VisualStudio
 *Release*
