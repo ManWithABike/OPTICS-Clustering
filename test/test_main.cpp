@@ -15,6 +15,6 @@ int main()
 	for( const auto& x : reach_dists){
         std::cout << x.to_string() << "; ";
 	}
-	optics::draw_reachability_plot( reach_dists, "reachdists.bmp" );
+	optics::draw_reachability_plot( reach_dists, "ReachabilityPlot" );
 
 }
