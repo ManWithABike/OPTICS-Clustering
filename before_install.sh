@@ -1,6 +1,5 @@
 mkdir dependencies
 cd dependencies
-
 	mkdir include
 	cd include
 	sudo mkdir /usr/local/include/CImg
@@ -20,13 +19,12 @@ cd dependencies
 	cd ..
 	cd ..
 	printf "--------- Fplus installed ---------\n"
-
 cd ..
+
 sudo cp -r ./include/optics /usr/local/include/
 
-	cd test
+cd test
 	chmod +x ./compile_and_run.sh
 	./compile_and_run.sh
 	echo "--------- Tests successfully completed ---------"
-
 cd ..
