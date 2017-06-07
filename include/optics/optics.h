@@ -3,9 +3,9 @@
 // Distributed under the MIT Software License (X11 license).
 // (See accompanying file LICENSE)
 
-#include "CImg/CImg.h"
-#include "geometry/geometry.hpp"
 
+#include <geometry/geometry.hpp>
+#include <CImg/CImg.h>
 #include <fplus/fplus.hpp>
 
 #pragma warning( push )

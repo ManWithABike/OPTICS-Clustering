@@ -27,6 +27,23 @@
 *.exe
 *.out
 *.app
+run
+
+# VisualStudio
+*Release*
+*Debug*
+*.iobj
+*.ipdb
+*.pdb
+*.vcxproj*
+*.filters
+*.pdb
+*.ilk
+
+# VSCode
+*.vscode*
+/Debug
+/Release
 
 build
 dependencies
