@@ -168,7 +168,7 @@ T pop_from_set( std::set<T>& set ) {
 
 template<typename T, std::size_t N>
 void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist,
-				const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds,
+				const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds
 			) {
 	for ( const auto& o : neighbor_indices ) {
 		if ( processed[o] ) { continue; }
