@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE)
 
 #include "CImg/CImg.h"
-#include "geometry/geometry.h"
+#include "geometry/geometry.hpp"
 
 #include <fplus/fplus.hpp>
 
@@ -27,6 +27,9 @@ namespace optics {
 struct reachability_dist {
 	reachability_dist( std::size_t point_index, double reach_dist ) : point_index( point_index ), reach_dist( reach_dist ) {}
 
+    std::string to_string() const{
+        return std::to_string( point_index) + std::to_string( reach_dist );
+    }
 	std::size_t point_index;
 	double reach_dist;
 };
@@ -246,10 +249,10 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 
 template<typename T, std::size_t dimension>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::vector<T>>& points, const std::size_t min_pts, double epsilon ) {
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon ) {
 	if ( points.empty() ) { return{}; }
 	assert( dimension != 0 );
-	
+
 	std::vector<geom::Vec<T, dimension>> geom_points(points.size());
 	for ( const auto& p : points ) {
 		if ( p.size() != dimension ) {
@@ -258,7 +261,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 		}
 		geom_points.push_back( geom::Vec<T, dimension>( p ) );
 	}
-		
+
 	return compute_reachability_dists( geom_points, min_pts, epsilon );
 }
 
