@@ -56,9 +56,6 @@ matrix:
             - clang-3.6
           sources: *sources
 
-script:
-    - chmod +x ./build_and_test.sh
-    - ./build_and_test.sh
 
 before_install:
     - sudo apt-get update -qq
