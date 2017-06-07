@@ -21,10 +21,10 @@ cd dependencies
 	printf "--------- Fplus installed ---------\n"
 cd ..
 
-sudo cp -r ./include/optics /usr/local/include/
+#sudo cp -r ./include/optics /usr/local/include/
 
-cd test
-	chmod +x ./compile_and_run.sh
-	./compile_and_run.sh
-	echo "--------- Tests successfully completed ---------"
-cd ..
+#cd test
+#	chmod +x ./compile_and_run.sh
+#	./compile_and_run.sh
+#	echo "--------- Tests successfully completed ---------"
+#cd ..
