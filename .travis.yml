@@ -35,24 +35,7 @@ matrix:
           packages:
             - g++-4.9
           sources: *sources
-      env: COMPILER=g++-4.9
-    
-    - compiler: clang
-      addons:
-        apt:
-          packages:
-            - clang-4.0
-          sources: *sources
-      env: COMPILER=clang++-4.0
-    
-    - compiler: clang
-      addons:
-        apt:
-          packages:
-            - clang-3.9
-          sources: *sources
-      env: COMPILER=clang++-3.9
-      
+      env: COMPILER=g++-4.9    
 
     - compiler: clang
       addons:

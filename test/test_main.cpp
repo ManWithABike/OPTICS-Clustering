@@ -1,4 +1,4 @@
-#include <optics/optics.h>
+#include "../include/optics/optics.h"
 #include <vector>
 
 static const int N = 2;
