@@ -1,4 +1,4 @@
-language: generic
+language: cpp
 
 dist: trusty
 sudo: required
@@ -21,14 +21,14 @@ matrix:
             - llvm-toolchain-precise-3.6
       env: CXX=g++-6 CC=gcc-6
       
-    -compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           packages:
             - g++-5
           sources: *sources
       env: CXX=g++-5 CC=gcc-5
-      
+    
     - compiler: gcc
       addons:
         apt:
