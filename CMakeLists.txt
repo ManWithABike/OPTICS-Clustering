@@ -5,11 +5,11 @@ cmake_minimum_required(VERSION 2.8)
 project(OPTICS-Clustering)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-	set(DEBUG_FLAGS "-std=c++11 -g -O1 -lX11 -pthread -Wall -Wextra -Werror -pedantic")
-	set(RELEASE_FLAGS "-std=c++11 -O3 -lX11 -pthread -Wall -Wextra -Werror -pedantic")
+	set(DEBUG_FLAGS "-std=c++11 -g -O1 -lX11 -pthread -pedantic")
+	set(RELEASE_FLAGS "-std=c++11 -O3 -lX11 -pthread -pedantic")
 else()
-	set(DEBUG_FLAGS "-std=c++11 -g -O1 -Wall -Wextra -Werror -pedantic")
-	set(RELEASE_FLAGS "-std=c++11 -O3 -Wall -Wextra -Werror -pedantic")
+	set(DEBUG_FLAGS "-std=c++11 -g -O1 -pedantic")
+	set(RELEASE_FLAGS "-std=c++11 -O3 -pedantic")
 endif ()
 
 
