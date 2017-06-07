@@ -4,8 +4,10 @@
 // (See accompanying file LICENSE)
 
 
+#pragma once
+
+
 #include <geometry/geometry.hpp>
-#include <CImg/CImg.h>
 #include <fplus/fplus.hpp>
 
 

@@ -16,6 +16,8 @@ matrix:
           sources: &sources
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise
+            - llvm-toolchain-precise-4.0
+            - llvm-toolchain-precise-3.9
             - llvm-toolchain-precise-3.8
             - llvm-toolchain-precise-3.7
             - llvm-toolchain-precise-3.6
@@ -37,6 +39,22 @@ matrix:
           sources: *sources
       env: COMPILER=g++-4.9    
 
+    - compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-4.0
+          sources: *sources
+      env: COMPILER=clang++-4.0
+    
+    - compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-3.9
+          sources: *sources
+      env: COMPILER=clang++-3.9
+      
     - compiler: clang
       addons:
         apt:
