@@ -3,9 +3,9 @@ cd dependencies
 	mkdir include
 	cd include
 	
-	sudo mkdir /usr/local/include/BitmapImage
-	sudo wget https://raw.githubusercontent.com/CrikeeIP/bitmap/master/bitmap_image.hpp -O /usr/local/include/BitmapImage/bitmap_image.hpp
-	printf "%s\n" "--------- BitmapImage downloaded ---------\n" ""
+	#sudo mkdir /usr/local/include/BitmapImage
+	#sudo wget https://raw.githubusercontent.com/CrikeeIP/bitmap/master/bitmap_image.hpp -O /usr/local/include/BitmapImage/bitmap_image.hpp
+	#printf "%s\n" "--------- BitmapImage downloaded ---------\n" ""
 		
 	#sudo mkdir /usr/local/include/CImg
 	#sudo wget https://raw.githubusercontent.com/CrikeeIP/CImg/master/CImg.h -O /usr/local/include/CImg/CImg.h

@@ -6,17 +6,15 @@
 
 #pragma once
 
+#include "bitmap_image.hpp"
 
 #include <geometry/geometry.hpp>
-#include <BitmapImage/bitmap_image.hpp>
 #include <fplus/fplus.hpp>
-
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/index/rtree.hpp>
-
 
 #include<vector>
 #include <exception>
@@ -315,9 +313,9 @@ inline void export_reachability_dists( const std::vector<reachability_dist>& rea
 
 inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_dists, const std::string& img_file_name ) {
 
-	double no_dist = fplus::maximum_on( []( const reachability_dist& r ) -> double {
+	int no_dist = fplus::round(fplus::maximum_on( []( const reachability_dist& r ) -> double {
 		return r.reach_dist;
-	}, reach_dists ).reach_dist + 1;
+	}, reach_dists ).reach_dist + 1);
 
     bitmap_image image( std::max( reach_dists.size(), std::size_t(100)), 128 );
     image.clear();
@@ -326,7 +324,7 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 
 	for ( int i = 0; i < static_cast<int>(reach_dists.size())-1; i++ ) {
         int x1 = image.width() * i/reach_dists.size();
-        int y1 =  reach_dists[i].reach_dist < 0 ? no_dist : reach_dists[i].reach_dist;
+        int y1 =  reach_dists[i].reach_dist < 0 ? no_dist : fplus::round(reach_dists[i].reach_dist);
         int x2 = image.width() * (i+1)/reach_dists.size();
         int y2 =  reach_dists[i+1].reach_dist < 0 ? no_dist : reach_dists[i].reach_dist;
         draw.line_segment(x1, y1, x2, y2);
