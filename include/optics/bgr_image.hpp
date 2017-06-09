@@ -58,7 +58,7 @@ public:
     }
     bgr_col& pix(const img_pos& pos) {
 		if ( pos.y_ >= size().height_ || pos.x_ >= size().width_ ) {
-			throw std::out_of_range( "img_pos " + std::to_string(pos.x_) + "," + std::to_string(pos.x_) + " out of range!" );
+			throw std::out_of_range( "img_pos " + std::to_string(pos.x_) + "," + std::to_string(pos.y_) + " out of range!" );
 		}
         return data_[pos.y_ * size().width_ + pos.x_];
     }

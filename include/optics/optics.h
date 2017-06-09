@@ -37,10 +37,11 @@ struct reachability_dist {
 };
 
 inline bool operator<( const reachability_dist& lhs, const reachability_dist& rhs ) {
-	assert( lhs.point_index != rhs.point_index );
 	return (lhs.reach_dist == rhs.reach_dist) ? (lhs.point_index < rhs.point_index) : (lhs.reach_dist < rhs.reach_dist);
 }
-
+inline bool operator==( const reachability_dist& lhs, const reachability_dist& rhs ) {
+	return (lhs.reach_dist == rhs.reach_dist) && (lhs.point_index == rhs.point_index) ;
+}
 
 
 namespace internal{
@@ -53,13 +54,13 @@ template<typename T, std::size_t N>
 using Pt = typename bg::model::point<T, N, bg::cs::cartesian>;
 
 template<typename T, std::size_t N>
-using TreeValues = typename std::pair<Pt<T, N>, std::size_t>;
+using TreeValue = typename std::pair<Pt<T, N>, std::size_t>;
 
 template<typename T, std::size_t N>
 using Box = typename bg::model::box<Pt<T, N>>;
 
 template<typename T, std::size_t N>
-using RTree = typename bgi::rtree<TreeValues<T, N>, bgi::quadratic<25>>; //TODO: Number of elems per node configurable?
+using RTree = typename bgi::rtree<TreeValue<T, N>, bgi::quadratic<25>>; //TODO: Number of elems per node configurable?
 
 
 
@@ -70,7 +71,7 @@ struct set_boost_point_coords
 	static inline int set( Pt<T, N>& boost_pt, const geom::Vec<T, N>& coords )
 	{
 		bg::set<I>( boost_pt, coords[I] );
-		return 0;
+		return set_boost_point_coords<T, N, I - 1>::set( boost_pt, coords );
 	}
 };
 
@@ -87,16 +88,17 @@ struct set_boost_point_coords<T, N, 0>
 template<typename T, std::size_t N>
 Pt<T, N> geom_to_boost_point( const geom::Vec<T, N>& point ) {
 	Pt<T, N> boost_point;
-	set_boost_point_coords<T, N, N - 1>::set( boost_point, point );
+	set_boost_point_coords<T, N, N - 1 >::set( boost_point, point );
 	return boost_point;
 }
+
 
 
 template<typename T, std::size_t N>
 RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 	//Insert all points with index into cloud
 	size_t idx_id = 0;
-	auto cloud = fplus::transform( [&idx_id]( const geom::Vec<T, N>& point ) -> TreeValues<T, N> {
+	auto cloud = fplus::transform( [&idx_id]( const geom::Vec<T, N>& point ) -> TreeValue<T, N> {
 		return{ geom_to_boost_point( point ),  idx_id++ };
 	}, points );
 
@@ -105,32 +107,32 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 	return rtree;
 }
 
+template<typename T, std::size_t dimension>
+double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) {
+	const auto dist = bg::distance( boost_pt, geom_to_boost_point( geom_pt ) );
+	return dist;
+}
 
 template<typename T, std::size_t N>
-std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, std::vector<geom::Vec<T, N>> points, T epsilon, const RTree<T, N>& rtree ) {
+std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
 	//produce search box
-	geom::Vec<T, N> eps_vec( epsilon );
-	geom::Vec<T, N> corner1 = point - eps_vec;
-	geom::Vec<T, N> corner2 = point + eps_vec;
-	Box<T, N> query_box( geom_to_boost_point( corner1 ), geom_to_boost_point( corner2 ) );
+	geom::Vec<double, N> eps_vec( epsilon );
+	geom::Vec<double, N> corner1 = point.as_doubles() - eps_vec;
+	geom::Vec<double, N> corner2 = point.as_doubles() + eps_vec;
+	Box<double, N> query_box( geom_to_boost_point( corner1 ), geom_to_boost_point( corner2 ) ); //TODO: possible speed-up if query-box is of type T (e.g. int) when possible?
 
 	//search neighbors in box (manhattan dist 2*epsilon)
-	std::vector<TreeValues<T, N>> neighbors;
+	std::vector<TreeValue<T, N>> neighbors;
 	rtree.query( bgi::intersects( query_box ), std::back_inserter( neighbors ) );
 
-	//extract indices from tree values
-	std::vector<std::size_t> neighbor_indices = fplus::transform( []( const TreeValues<T, N>& v ) -> std::size_t {
-		return v.second;
+	//keep those with euclidean dist < epsilon
+	auto neighbor_indices = fplus::transform_and_keep_justs( [&point, &epsilon]( const TreeValue<T, N>& tree_val ) ->  fplus::maybe<std::size_t> {
+		if ( dist<T,N>( tree_val.first, point ) > epsilon ) {
+			return {};
+		}
+		return tree_val.second;
 	}, neighbors );
 
-	//keep those with euclidean dist < epsilon
-	std::vector<std::size_t> drop_indices;
-	for ( std::size_t i = 0; i < neighbor_indices.size(); i++ ) {
-		if ( geom::dist( point, points[neighbor_indices[i]] ) > epsilon ) {
-			drop_indices.push_back( i );
-		}
-	}
-	neighbor_indices = fplus::drop_idxs( drop_indices, neighbor_indices );
 	return neighbor_indices;
 }
 
@@ -141,23 +143,23 @@ fplus::maybe<double> compute_core_dist( const geom::Vec<T, N>& point, const std:
 	if ( neighbor_indices.size() < min_pts ) { return{}; }
 
 	//sort neighbors by distance
-	auto neighbors = fplus::sort_on( [&points, &point]( const std::size_t& idx ) -> double {
-		return geom::dist( point, points[idx] );
+	/*auto neighbors = fplus::sort_on( [&points, &point]( const std::size_t& idx ) -> double {
+		return geom::square_dist( point, points[idx] );
 	}, neighbor_indices );
 
 	double core_dist = geom::dist( point, points[neighbors[min_pts - 1]] );
+	*/
+	auto core_elem_idx = fplus::nth_element_on( [&points, &point]( const std::size_t& idx ) -> double {
+		return geom::square_dist( point, points[idx] );
+	}, min_pts-1, neighbor_indices );
+	double core_dist = geom::dist( points[core_elem_idx], point );
 	return core_dist;
 }
 
 
-inline void erase_idx_from_set( const std::size_t idx, std::set<reachability_dist>& seeds ) {
-	for ( auto it = seeds.begin(); it != seeds.end(); it++ ) {
-		if ( it->point_index == idx ) {
-			seeds.erase( it );
-			return;
-		}
-	}
-	assert( false );
+inline void erase_idx_from_set( const reachability_dist& d, std::set<reachability_dist>& seeds ) {
+	auto x = seeds.erase( d );
+	assert( x == 1 );
 }
 
 template<typename T>
@@ -181,10 +183,11 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 		}
 
 		else if ( new_reachability_dist < reachability[o] ) {
+			//erase from seeds
+			erase_idx_from_set( reachability_dist( o, reachability[o]), seeds );
+			//update reachability
 			reachability[o] = new_reachability_dist;
-			//loesche idx aus seeds
-			erase_idx_from_set( o, seeds );
-			//fuege idx mit new_reach_dist wieder in seeds ein
+			//reinsert seed with new reachability
 			seeds.insert( reachability_dist( o, new_reachability_dist ) );
 		}
 	}
@@ -194,8 +197,12 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 
 
 
-template<typename T, std::size_t N>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, N>>& points, const std::size_t min_pts, double epsilon ) {
+template<typename T, std::size_t dimension>
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon ) {
+	static_assert(std::is_convertible<double,T>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
+	static_assert( dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
+	if ( points.empty() ) { return{}; }
+
 	//algorithm tracker
 	std::vector<bool> processed( points.size(), false );
 	std::vector<std::size_t> ordered_list;
@@ -212,7 +219,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 		ordered_list.push_back( point_idx );
 		std::set<reachability_dist> seeds;
 
-		auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], points, epsilon, rtree );
+		auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], epsilon, rtree );
 
 		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, min_pts );
 		if ( !core_dist_m.is_just() ) { continue; }
@@ -226,7 +233,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 			processed[s.point_index] = true;
 			ordered_list.push_back( s.point_index );
 
-			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], points, epsilon, rtree );
+			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], epsilon, rtree );
 
 			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
@@ -251,8 +258,9 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 template<typename T, std::size_t dimension>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon ) {
+	static_assert(std::is_convertible<double, T>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!");
+	static_assert(dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
 	if ( points.empty() ) { return{}; }
-	assert( dimension != 0 );
 
 	std::vector<geom::Vec<T, dimension>> geom_points;
 	geom_points.reserve( points.size() );
@@ -264,7 +272,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 }
 
 
-inline std::vector<std::vector<std::size_t>> make_clusters( const std::vector<reachability_dist>& reach_dists, double reachability_threshold ) {
+inline std::vector<std::vector<std::size_t>> get_cluster_indices( const std::vector<reachability_dist>& reach_dists, double reachability_threshold ) {
 	assert( reach_dists.front().reach_dist < 0.0 );
 	std::vector<std::vector<std::size_t>> result;
 	for ( const auto& r : reach_dists ) {
@@ -278,6 +286,35 @@ inline std::vector<std::vector<std::size_t>> make_clusters( const std::vector<re
 	return result;
 }
 
+template<typename T, std::size_t dimension>
+std::vector<std::vector<std::array<T, dimension>>> get_cluster_points( const std::vector<reachability_dist>& reach_dists, double reachability_threshold, const std::vector<std::array<T, dimension>>& points ) {
+	const auto sorted_reachdist_indices = fplus::unique( fplus::sort_on( []( const reachability_dist& r )->std::size_t { return r.point_index; }, reach_dists ) );
+	assert( sorted_reachdist_indices.size() == points.size() );
+	assert( sorted_reachdist_indices.back().point_index == points.size() - 1 );
+
+	auto clusters = get_cluster_indices( reach_dists, reachability_threshold );
+	std::vector<std::vector<std::array<T, dimension>>> result;
+	result.reserve( clusters.size() );
+	for ( const auto& cluster_indices : clusters ) {
+		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
+	}
+	return result;
+}
+
+template<typename T, std::size_t dimension>
+std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points( const std::vector<reachability_dist>& reach_dists, double reachability_threshold, const std::vector<geom::Vec<T, dimension>>& points ) {
+	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists );
+	assert( sorted_reachdists.size() == points.size() );
+	assert( sorted_reachdists.back() == points.size() - 1 );
+
+	auto clusters = get_cluster_indices( reach_dists, reachability_threashold );
+	std::vector<geom::Vec<T, N>> result;
+	result.reserve( clusters.size() ));
+	for ( const auto& cluster_indices : clusters ) {
+		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
+	}
+	return result;
+}
 
 /**Exports a list of reachability distances into a csv file.
 * If switch replace_nodists is set (as by default), points that haven't been assigned a reachability distance will be set to the maximum reachability distance + 1.
@@ -351,6 +388,31 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 
     image.save(img_file_name);
 	return;
+}
+
+template<typename T>
+bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clusters ) {
+	auto box = geom2d::bounding_box( fplus::concat( clusters ) );
+	bgr_image cluster_image( size_2d((box.second - box.first).x()+1, (box.second - box.first).y()+1), bgr_col(255,255,255) );
+	std::array<bgr_col, 6> colours = { bgr_col( 255,0,0 ), bgr_col( 0,255,0 ), bgr_col(0,0,255), bgr_col(255,255,0), bgr_col(255,0,255), bgr_col(0,255,255) };
+	int col_idx = 0;
+	for ( const auto& cluster : clusters ) {
+		bgr_col col = colours[col_idx];
+		++col_idx %= colours.size();
+		for ( const auto & pt : cluster ) {
+			cluster_image.pix( img_pos( pt.x()-box.first.x(), pt.y()-box.first.y() ) ) = col;
+		}
+	}
+	return cluster_image;
+}
+
+template<typename T>
+bgr_image draw_2d_clusters( const std::vector<std::vector<std::array<T, 2>>>& clusters ) {
+	auto geom_clusters = fplus::transform_inner( []( const std::array<T, 2>& pt )-> geom::Vec<T, 2> {
+		return geom::Vec<T,2>( pt );
+	}, clusters );
+
+	return draw_2d_clusters( geom_clusters );
 }
 
 } //namespace optics
