@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 struct bgr_col
 {
@@ -59,7 +60,6 @@ public:
 		if ( pos.y_ >= size().height_ || pos.x_ >= size().width_ ) {
 			throw std::out_of_range( "img_pos " + std::to_string(pos.x_) + "," + std::to_string(pos.x_) + " out of range!" );
 		}
-        const auto idx = pos.y_ * size().width_ + pos.x_;
         return data_[pos.y_ * size().width_ + pos.x_];
     }
     bool save(const std::string& filepath) const;
@@ -104,7 +104,8 @@ void draw_pixel( bgr_image& image, const img_pos& p, const bgr_col& col ) {
 void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, const bgr_col& col )
 {
 	std::vector<img_pos> result;
-	result.reserve( static_cast<int>( std::ceil( std::sqrt( (p2.x_ - p1.x_)*(p2.x_ - p1.x_) + (p2.y_ - p1.y_)) ) + 2 ) );
+	double dist = std::ceil( std::sqrt( (p2.x_ - p1.x_)*(p2.x_ - p1.x_) + (p2.y_ - p1.y_)*(p2.y_ - p1.y_)) );
+	result.reserve( static_cast<int>(dist) + 2 );
 
 	int x1 = p1.x_; int y1 = p1.y_;
 	int x2 = p2.x_; int y2 = p2.y_;
@@ -161,7 +162,7 @@ void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, 
 			result.push_back( img_pos( x1, y1 ) );
 		}
 	}
-	
+
 	for ( const auto& p : result ) {
 		draw_pixel( image, p, col );
 	}
