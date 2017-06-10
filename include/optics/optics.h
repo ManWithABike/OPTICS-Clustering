@@ -303,13 +303,13 @@ std::vector<std::vector<std::array<T, dimension>>> get_cluster_points( const std
 
 template<typename T, std::size_t dimension>
 std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points( const std::vector<reachability_dist>& reach_dists, double reachability_threshold, const std::vector<geom::Vec<T, dimension>>& points ) {
-	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists );
+	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists ) );
 	assert( sorted_reachdists.size() == points.size() );
 	assert( sorted_reachdists.back() == points.size() - 1 );
 
-	auto clusters = get_cluster_indices( reach_dists, reachability_threashold );
+	auto clusters = get_cluster_indices( reach_dists, reachability_threshold );
 	std::vector<geom::Vec<T, dimension>> result;
-	result.reserve( clusters.size() ));
+	result.reserve( clusters.size() );
 	for ( const auto& cluster_indices : clusters ) {
 		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
 	}
@@ -320,7 +320,7 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points( const std:
 * If switch replace_nodists is set (as by default), points that haven't been assigned a reachability distance will be set to the maximum reachability distance + 1.
 * Otherwise, points that haven't been assigned a reachability distance at all will appear with reachability distance -1.0.
 */
-inline void export_reachability_dists( const std::vector<reachability_dist>& reach_dists, const std::string& csv_file_path, double replace_nodists = true ) {
+inline void export_reachability_dists( const std::vector<reachability_dist>& reach_dists, const std::string& csv_file_path, bool replace_nodists = true ) {
 	//open filestream
 	std::ofstream stream;
 	stream.open( csv_file_path, std::ios::binary );
@@ -393,14 +393,14 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 template<typename T>
 bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clusters ) {
 	auto box = geom2d::bounding_box( fplus::concat( clusters ) );
-	bgr_image cluster_image( size_2d((box.second - box.first).x()+1, (box.second - box.first).y()+1), bgr_col(255,255,255) );
+	bgr_image cluster_image( size_2d(box.get_size().first+1, box.get_size().second+1), bgr_col(255,255,255) );
 	std::array<bgr_col, 6> colours = { bgr_col( 255,0,0 ), bgr_col( 0,255,0 ), bgr_col(0,0,255), bgr_col(255,255,0), bgr_col(255,0,255), bgr_col(0,255,255) };
 	int col_idx = 0;
 	for ( const auto& cluster : clusters ) {
 		bgr_col col = colours[col_idx];
 		++col_idx %= colours.size();
 		for ( const auto & pt : cluster ) {
-			cluster_image.pix( img_pos( pt.x()-box.first.x(), pt.y()-box.first.y() ) ) = col;
+			cluster_image.pix( img_pos( pt.x()-box.bl().x(), pt.y()-box.bl().y() ) ) = col;
 		}
 	}
 	return cluster_image;
