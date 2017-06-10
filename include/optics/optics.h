@@ -308,7 +308,7 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points( const std:
 	assert( sorted_reachdists.back() == points.size() - 1 );
 
 	auto clusters = get_cluster_indices( reach_dists, reachability_threashold );
-	std::vector<geom::Vec<T, N>> result;
+	std::vector<geom::Vec<T, dimension>> result;
 	result.reserve( clusters.size() ));
 	for ( const auto& cluster_indices : clusters ) {
 		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
@@ -354,7 +354,7 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 	auto reach_dists_values = fplus::transform( []( const reachability_dist& r )-> double {
 		return r.reach_dist;
 	}, reach_dists );
-	
+
 	//Normalize the data
 	double max_val = fplus::maximum( reach_dists_values );
 	reach_dists_values.push_back( max_val + fplus::max( 30, max_val / 3 ) );//The future no_dist for points which weren't assigned any reachability dist. Has to be at least 30, and scale with max_val. Will be normalized to 256-64
@@ -378,7 +378,7 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 		col = reach_dists_values[i+1] < 0 ? bgr_col( 0, 0, 255 ) : bgr_col( 0, 255, 0 );
 		draw_pixel( image, img_pos( x2, y2 ), col );
 	}
-	
+
 	//Draw Scale
 	int x2 = fplus::round( image.size().width_ / static_cast<double>((reach_dists.size() - 1)) );
 	plot_line_segment( image, img_pos( 0, image.size().height_ - 1 ), img_pos( x2, image.size().height_ - 1 ), bgr_col(0,255,0) ); //One point
