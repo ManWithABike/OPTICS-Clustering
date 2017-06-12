@@ -393,18 +393,22 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 template<typename T>
 bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clusters ) {
 	auto box = geom2d::bounding_box( fplus::concat( clusters ) );
-	bgr_image cluster_image( size_2d(box.get_size().first+1, box.get_size().second+1), bgr_col(255,255,255) );
+	bgr_image cluster_image( size_2d( fplus::round<double, std::size_t>(box.get_size().first+1), fplus::round<double, std::size_t>( box.get_size().second+1)), bgr_col(255,255,255) );
 	std::array<bgr_col, 6> colours = { bgr_col( 255,0,0 ), bgr_col( 0,255,0 ), bgr_col(0,0,255), bgr_col(255,255,0), bgr_col(255,0,255), bgr_col(0,255,255) };
 	int col_idx = 0;
 	for ( const auto& cluster : clusters ) {
 		bgr_col col = colours[col_idx];
 		++col_idx %= colours.size();
 		auto cluster_box = geom2d::bounding_box( cluster );
-		for( const auto& edge: fplus::overlapping_pairs_cyclic(cluster_box.points())){
-            plot_line_segment( cluster_image, img_pos(edge.first.x(), edge.first.y()), img_pos(edge.second.x(), edge.second.y()), col );
+		for( const auto& edge: fplus::overlapping_pairs_cyclic<std::array<geom2d::Vec2D<double>,4>,std::vector<std::pair<geom2d::Vec2D<double>, geom2d::Vec2D<double>>>>(cluster_box.points()) ){
+            plot_line_segment( cluster_image, 
+							   img_pos( fplus::round<double, std::size_t>(edge.first.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.first.y() - box.bl().y() )),
+							   img_pos( fplus::round<double, std::size_t>( edge.second.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.second.y() - box.bl().y() ) ),
+							   col );
 		}
 		for ( const auto & pt : cluster ) {
-			cluster_image.pix( img_pos( pt.x()-box.bl().x(), pt.y()-box.bl().y() ) ) = col;
+			img_pos cluster_pt = img_pos( fplus::round<double, std::size_t>( pt.x() - box.bl().x() ), fplus::round<double, std::size_t>( pt.y() - box.bl().y() ) );
+			plot_circle( cluster_image, cluster_pt, 2, col );
 		}
 	}
 	return cluster_image;
