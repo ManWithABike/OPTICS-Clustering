@@ -18,8 +18,9 @@
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-#include<vector>
+#include <vector>
 #include <exception>
+#include <stdexcept>
 
 
 
