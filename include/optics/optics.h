@@ -28,7 +28,7 @@ namespace optics {
 
 
 struct reachability_dist {
-	reachability_dist( std::size_t point_index, double reach_dist ) : point_index( point_index ), reach_dist( reach_dist ) {}
+	reachability_dist( std::size_t point_index_, double reach_dist_ ) : point_index( point_index_ ), reach_dist( reach_dist_ ) {}
 
     std::string to_string() const{
         return std::to_string( point_index) + ":" + std::to_string( reach_dist );
@@ -437,7 +437,7 @@ bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clus
 		++col_idx %= colours.size();
 		auto cluster_box = geom2d::bounding_box( cluster );
 		for( const auto& edge: fplus::overlapping_pairs_cyclic(cluster_box.points()) ){
-            plot_line_segment( cluster_image, 
+            plot_line_segment( cluster_image,
 							   img_pos( fplus::round<double, std::size_t>(edge.first.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.first.y() - box.bl().y() )),
 							   img_pos( fplus::round<double, std::size_t>( edge.second.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.second.y() - box.bl().y() ) ),
 							   col );

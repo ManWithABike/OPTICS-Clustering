@@ -24,6 +24,7 @@ void test_1(){
 	assert( ( fplus::sort( clusters[2] ) == std::vector <std::size_t>({ 6,7,8 }) ) );
 
 	double epsilon_est = optics::epsilon_estimation( points, 2 );
+	std::cout << "Epsilon-Estimation: " << epsilon_est << std::endl;
 }
 
 void test_2() {
@@ -47,6 +48,7 @@ void test_2() {
 	assert( (fplus::sort( clusters[2] ) == std::vector <std::size_t>( { 6,7,8 } )) );
 
 	double epsilon_est = optics::epsilon_estimation( points, 2 );
+    std::cout << "Epsilon-Estimation: " << epsilon_est << std::endl;
 
 	optics::draw_reachability_plot( reach_dists, "ReachabilityPlot" );
 }
@@ -94,7 +96,7 @@ void test_5() {
 
 	std::vector<point> points; //Your list of points goes here
 	points = { { 0,0,0 },{ 1,0,0 },{ 0,0,1 },{ 0,1,0 },
-	{ 5,0,0 },{ 0,5,0 },{ 0,0,5 },{ 5,5,5 } 
+	{ 5,0,0 },{ 0,5,0 },{ 0,0,5 },{ 5,5,5 }
 	};
 
 	double epsilon_est = optics::epsilon_estimation( points, 3 );
