@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <stdexcept>
 
 struct bgr_col
 {
