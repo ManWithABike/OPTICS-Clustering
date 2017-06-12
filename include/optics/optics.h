@@ -200,7 +200,7 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 
 template<typename T, std::size_t dimension>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon ) {
-	static_assert(std::is_convertible<double,T>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
+	static_assert(std::is_convertible<T,double>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
 	static_assert( dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
 	if ( points.empty() ) { return{}; }
 
