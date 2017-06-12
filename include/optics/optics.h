@@ -197,12 +197,47 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 } //namespace internal
 
 
+template<typename T, std::size_t dimension>
+double epsilon_estimation( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts ){
+	static_assert(std::is_convertible<double, T>::value, "optics::epsilon_estimation: Point type 'T' must be convertible to double!");
+	static_assert(dimension >= 1, "optics::epsilon_estimation: dimension must be >=1");
+	if ( points.empty() ) { return 0; }
+
+	double d = static_cast<double> (dimension);
+	auto  space = geom::bounding_box( points );
+	double space_volume = geom::product( geom::abs(space.first - space.second) );
+	double nominator = space_volume * static_cast<double>(min_pts) * std::tgamma( d/2.0 + 1.0 );
+	double denominator = static_cast<double>(points.size()) * std::sqrt( std::pow( geom::pi, d ) );
+	double r = std::pow( nominator / denominator, 1.0 / d );
+	return r;
+}
+
 
 template<typename T, std::size_t dimension>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon ) {
+double epsilon_estimation( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts ) {
+	static_assert(std::is_convertible<double, T>::value, "optics::epsilon_estimation: Point type 'T' must be convertible to double!");
+	static_assert(dimension >= 1, "optics::epsilon_estimation: dimension must be >=1");
+	if ( points.empty() ) { return 0; }
+
+	std::vector<geom::Vec<T, dimension>> geom_points;
+	geom_points.reserve( points.size() );
+	for ( const auto& p : points ) {
+		geom_points.push_back( geom::Vec<T, dimension>( p ) );
+	}
+
+	return epsilon_estimation( geom_points, min_pts );
+}
+
+
+template<typename T, std::size_t dimension>
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon = 0.0 ) {
 	static_assert(std::is_convertible<T,double>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
 	static_assert( dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
 	if ( points.empty() ) { return{}; }
+
+	if ( epsilon <= 0.0 ) {
+		epsilon = epsilon_estimation( points, min_pts );
+	}
 
 	//algorithm tracker
 	std::vector<bool> processed( points.size(), false );
@@ -258,7 +293,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 
 template<typename T, std::size_t dimension>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon ) {
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = 0.0 ) {
 	static_assert(std::is_convertible<double, T>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!");
 	static_assert(dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
 	if ( points.empty() ) { return{}; }
