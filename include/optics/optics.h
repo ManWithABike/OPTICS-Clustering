@@ -6,6 +6,7 @@
 
 #pragma once
 
+
 #define _HAS_AUTO_PTR_ETC 1
 
 #include "bgr_image.hpp"

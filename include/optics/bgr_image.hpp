@@ -1,4 +1,11 @@
+// Copyright Ingo Proff 2016.
+// https://github.com/CrikeeIP/Geometry
+// Distributed under the MIT Software License (X11 license)
+// (See accompanying file LICENSE)
+
+
 #pragma once
+
 
 #include <cstdint>
 #include <fstream>
