@@ -170,6 +170,9 @@ void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, 
 
 void plot_circle( bgr_image& image, const img_pos& center, std::size_t radius, const bgr_col& col)
 {
+	if ( radius == 0 ) {
+		draw_pixel( image, center, col );
+	}
     int x = static_cast<int>(radius);
     int y = 0;
     int x0 = center.x_;

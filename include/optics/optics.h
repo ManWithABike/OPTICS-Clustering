@@ -358,10 +358,10 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 	//Normalize the data
 	double max_val = fplus::maximum( reach_dists_values );
 	reach_dists_values.push_back( max_val + fplus::max( 30, max_val / 3 ) );//The future no_dist for points which weren't assigned any reachability dist. Has to be at least 30, and scale with max_val. Will be normalized to 256-64
-	reach_dists_values.push_back( 1.0 );//In order to see where 1.0 was mapped after the normalization
+	reach_dists_values.push_back( 10.0 );//In order to see where 10.0 was mapped after the normalization
 	reach_dists_values = fplus::normalize_min_max( -1, 256 - 64, reach_dists_values );
-	//Extract normalized 1.0:
-	double one = reach_dists_values.back();
+	//Extract normalized 10.0:
+	double ten = reach_dists_values.back();
 	reach_dists_values.pop_back();
 	//Extract no_dist:
 	int no_dist = fplus::min( 255, fplus::round(reach_dists_values.back()));
@@ -382,7 +382,7 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 	//Draw Scale
 	int x2 = fplus::round( image.size().width_ / static_cast<double>((reach_dists.size() - 1)) );
 	plot_line_segment( image, img_pos( 0, image.size().height_ - 1 ), img_pos( x2, image.size().height_ - 1 ), bgr_col(0,255,0) ); //One point
-	plot_line_segment( image, img_pos( 0, image.size().height_ - 1 ), img_pos( 0, image.size().height_ - 1 - fplus::round<double,std::size_t>( one ) ), bgr_col( 255, 0, 0 ) ); //ReachDist 1
+	plot_line_segment( image, img_pos( 0, image.size().height_ - 1 ), img_pos( 0, image.size().height_ - 1 - fplus::round<double,std::size_t>( ten ) ), bgr_col( 255, 0, 0 ) ); //ReachDist 1
 	int no_dist_marker = fplus::min( static_cast<int>(image.size().height_ -1), fplus::round( fplus::maximum( reach_dists_values ) + 10.0 ));
 	plot_line_segment( image, img_pos( 0, image.size().height_ - 1 - no_dist_marker ), img_pos( image.size().width_/3, image.size().height_ - 1 - no_dist_marker ), bgr_col( 0, 0, 255 ) ); //ReachDist 1
 
@@ -400,7 +400,7 @@ bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clus
 		bgr_col col = colours[col_idx];
 		++col_idx %= colours.size();
 		auto cluster_box = geom2d::bounding_box( cluster );
-		for( const auto& edge: fplus::overlapping_pairs_cyclic<std::array<geom2d::Vec2D<double>,4>,std::vector<std::pair<geom2d::Vec2D<double>, geom2d::Vec2D<double>>>>(cluster_box.points()) ){
+		for( const auto& edge: fplus::overlapping_pairs_cyclic(cluster_box.points()) ){
             plot_line_segment( cluster_image, 
 							   img_pos( fplus::round<double, std::size_t>(edge.first.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.first.y() - box.bl().y() )),
 							   img_pos( fplus::round<double, std::size_t>( edge.second.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.second.y() - box.bl().y() ) ),
