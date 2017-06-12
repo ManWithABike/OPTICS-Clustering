@@ -167,3 +167,35 @@ void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, 
 		draw_pixel( image, p, col );
 	}
 }
+
+void plot_circle( bgr_image& image, const img_pos& center, std::size_t radius, const bgr_col& col)
+{
+    int x = static_cast<int>(radius);
+    int y = 0;
+    int x0 = center.x_;
+    int y0 = center.y_;
+    int err = 0;
+
+    while (x >= y)
+    {
+        draw_pixel( image, img_pos(x0 + x, y0 + y), col );
+        draw_pixel( image, img_pos(x0 + y, y0 + x), col );
+        draw_pixel( image, img_pos(x0 - y, y0 + x), col );
+        draw_pixel( image, img_pos(x0 - x, y0 + y), col );
+        draw_pixel( image, img_pos(x0 - x, y0 - y), col );
+        draw_pixel( image, img_pos(x0 - y, y0 - x), col );
+        draw_pixel( image, img_pos(x0 + y, y0 - x), col );
+        draw_pixel( image, img_pos(x0 + x, y0 - y), col );
+
+        y += 1;
+        if (err <= 0)
+        {
+            err += 2*y + 1;
+        }
+        if (err > 0)
+        {
+            x -= 1;
+            err -= 2*x + 1;
+        }
+    }
+}

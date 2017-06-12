@@ -399,6 +399,10 @@ bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clus
 	for ( const auto& cluster : clusters ) {
 		bgr_col col = colours[col_idx];
 		++col_idx %= colours.size();
+		auto cluster_box = geom2d::bounding_box( cluster );
+		for( const auto& edge: fplus::overlapping_pairs_cyclic(cluster_box.points())){
+            plot_line_segment( cluster_image, img_pos(edge.first.x(), edge.first.y()), img_pos(edge.second.x(), edge.second.y()), col );
+		}
 		for ( const auto & pt : cluster ) {
 			cluster_image.pix( img_pos( pt.x()-box.bl().x(), pt.y()-box.bl().y() ) ) = col;
 		}
