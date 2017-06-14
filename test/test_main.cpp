@@ -105,11 +105,89 @@ void test_5() {
 
 void test_6(){
     std::vector<optics::reachability_dist> reach_dists = {
-        {1,10.0}, {2,9.0}, {3,9.0}, {4, 5.0} //SDA
+        {1,10.0}, {2,9.0}, {3,9.0}, {4, 5.0},//SDA
+		{5,5.49}, {6,5.0},//Cluster1
+		{7, 6.5},//SUA
+		{8,3.0},//SDA
+		{9, 2.9}, {10, 2.8},//Cluster2
+		{11, 10.0},{12, 12.0}//SUA
     };
     double chi = 0.1;
     std::size_t min_pts = 4;
-    optics::get_chi_clusters( reach_dists, chi, min_pts );
+   auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+   assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>({ {2, 5}, {0, 10}, { 6,10 } }) ) );
+}
+
+void test_7() {
+	std::vector<optics::reachability_dist> reach_dists = {
+		{ 1,10.0 },{ 2,9.0 },{ 3,9.0 },{ 4, 5.0 },//SDA
+		{ 5,5.49 },{ 6,5.0 },//Cluster1
+		{ 7, 6.5 },//SUA
+		{ 8,3.0 },//SDA
+		{ 9, 2.9 },{ 10, 2.8 },//Cluster2
+		{ 11, 10.0 },{ 12, 12.0 },//SUA
+		{13, 4.0},//SDA
+		{14, 4.1}, {15,4.0},{ 16,3.9 },//Cluster3
+		{17,5.0}//SUA		
+	};
+	double chi = 0.1;
+	std::size_t min_pts = 4;
+	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 10 },{ 6,10 }, {11,16} } )) );
+}
+
+void test_8() {
+	std::vector<optics::reachability_dist> reach_dists = {
+		{ 1,11.0 },{ 2,9.0 },{ 3,9.0 },{ 4, 5.0 },//SDA
+		{ 5,5.49 },{ 6,5.0 },//Cluster1
+		{ 7, 6.5 },//SUA
+		{ 8,3.0 },//SDA
+		{ 9, 2.9 },{ 10, 2.8 },//Cluster2
+		{ 11, 10.0 },{ 12, 10.0 },//SUA
+		{ 13, 4.0 },//SDA
+		{ 14, 4.1 },{ 15,4.0 },{ 16,3.9 },//Cluster3
+		{ 17,12.0 }//SUA		
+	};
+	double chi = 0.1;
+	std::size_t min_pts = 4;
+	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{ 11,16 } } )) );
+}
+
+void test_9() {
+	std::vector<optics::reachability_dist> reach_dists = {
+		{ 1,12.0 },{ 2,9.0 },{ 3,9.0 },{ 4, 5.0 },//SDA
+		{ 5,5.49 },{ 6,5.0 },//Cluster1
+		{ 7, 6.5 },//SUA
+		{ 8,3.0 },//SDA
+		{ 9, 2.9 },{ 10, 2.8 },//Cluster2
+		{ 11, 10.0 },{ 12, 10.0 },//SUA
+		{ 13, 4.0 },//SDA
+		{ 14, 4.1 },{ 15,4.0 },{ 16,3.9 },//Cluster3
+		{ 17,11.0 }//SUA		
+	};
+	double chi = 0.1;
+	std::size_t min_pts = 4;
+	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{ 11,16 } } )) );
+}
+
+void test_10() {
+	std::vector<optics::reachability_dist> reach_dists = {
+		{ 1,12.0 },{ 2,9.0 },{ 3,9.0 },{ 4, 5.0 },//SDA
+		{ 5,5.49 },{ 6,5.0 },//Cluster1
+		{ 7, 6.5 },//SUA
+		{ 8,3.0 },//SDA
+		{ 9, 2.9 },{ 10, 2.8 },//Cluster2
+		{ 11, 10.0 },{ 12, 10.0 },//SUA
+		{ 13, 4.0 },//SDA
+		{ 14, 4.1 },{ 15,4.0 },{ 16,3.9 },//Cluster3
+		{ 17,12.0 }//SUA		
+	};
+	double chi = 0.1;
+	std::size_t min_pts = 4;
+	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{0,16},{ 11,16 } } )) );
 }
 
 int main()
@@ -125,4 +203,10 @@ int main()
 	test_5();
 
 	test_6();
+
+	test_7();
+
+	test_8();
+	test_9();
+	test_10();
 }

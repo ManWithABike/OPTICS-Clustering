@@ -464,49 +464,50 @@ struct SDA{
 std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts ){
     std::vector<std::pair<std::size_t, std::size_t>> clusters;
     std::vector<SDA> SDAs;
-    double mib;
+    double mib(0);
     const auto is_steep_down_pt = [&reach_dists, &chi](std::size_t idx ){
         if( idx+1 >= reach_dists.size() ) return true;
         return reach_dists[idx+1].reach_dist <= reach_dists[idx].reach_dist * (1-chi);
     };
         const auto is_steep_up_pt = [&reach_dists, &chi](std::size_t idx ){
         if( idx+1 >= reach_dists.size() ) return true;
-        return reach_dists[idx+1].reach_dist * (1+chi) >= reach_dists[idx].reach_dist;
+        return reach_dists[idx+1].reach_dist * (1-chi) >= reach_dists[idx].reach_dist;
     };
     const auto filter_sdas = [&chi, &reach_dists, &SDAs, &mib](){
         SDAs = fplus::keep_if( [&mib, &reach_dists, &chi](const SDA& sda)->bool{
-                    return mib > reach_dists[sda.begin_idx].reach_dist * (1-chi);
+                    return mib <= reach_dists[sda.begin_idx].reach_dist * (1-chi);
             }, SDAs);
-        for( auto& sda : SDAs){
-                sda.mib = std::max( sda.mib, mib);
-        }
+		for ( auto& sda : SDAs ) {
+			sda.mib = std::max( sda.mib, mib );
+		}
     };
-
     const auto get_sda_end = [&chi, &reach_dists, &min_pts, &is_steep_down_pt]( const std::size_t start_idx ) -> std::size_t{
         assert( is_steep_down_pt(start_idx) );
         std::size_t last_sd_idx = start_idx;
         std::size_t idx = start_idx +1;
-        while(start_idx < reach_dists.size()){
+        while( idx < reach_dists.size() ){
             if( idx - last_sd_idx >= min_pts){ return last_sd_idx; }
             if( reach_dists[idx].reach_dist > reach_dists[idx-1].reach_dist ){ return last_sd_idx; }
             if( is_steep_down_pt(idx) ){ last_sd_idx = idx; }
             idx++;
         }
+		return std::max( reach_dists.size() - 2, last_sd_idx);
     };
     const auto get_sua_end = [&chi, &reach_dists, &min_pts, &is_steep_up_pt]( const std::size_t start_idx ) -> std::size_t{
         assert( is_steep_up_pt(start_idx) );
         std::size_t last_su_idx = start_idx;
         std::size_t idx = start_idx +1;
-        while(start_idx < reach_dists.size()){
+        while( idx < reach_dists.size() ){
             if( idx - last_su_idx >= min_pts){ return last_su_idx; }
-            if( reach_dists[idx] < reach_dists[idx-1] ){ return last_su_idx; }
+            if( reach_dists[idx].reach_dist < reach_dists[idx-1].reach_dist ){ return last_su_idx; }
             if( is_steep_up_pt(idx) ){ last_su_idx = idx; }
             idx++;
         }
+		return std::max( reach_dists.size()-2, last_su_idx) ;
     };
     const auto cluster_borders = [&reach_dists, &chi]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> std::pair<std::size_t, std::size_t>{
         double start_reach = reach_dists[sda.begin_idx].reach_dist;
-        double end_reach = reach_dists[sua_end_idx+1].reach_dist;
+        double end_reach = reach_dists[std::min( sua_end_idx + 1, reach_dists.size()-1)].reach_dist;
         if( geom::in_range(start_reach, end_reach, start_reach*chi) ){
             return {sda.begin_idx, sua_end_idx };
         }
@@ -519,7 +520,7 @@ std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::ve
         }
         if( start_reach < end_reach ){
             std::size_t end_idx = sua_end_idx;
-            while( end_idx >= sua_begin_idx && reach_dists[end_idx].reach_dist > start_reach ){
+            while( end_idx >= sua_begin_idx && reach_dists[end_idx].reach_dist >= start_reach ){
                 end_idx--;
             }
             return std::make_pair( sda.begin_idx, end_idx+1 );
@@ -528,17 +529,19 @@ std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::ve
         return {0,0};
 
     };
-    const auto valid_combination = [&reach_dists, &min_pts]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool{
-        if( sda.mib > reach_dists[sua_end_idx].reach_dist ){ return false; }
+    const auto valid_combination = [&reach_dists, &chi, &min_pts]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool{
+        if( sda.mib > reach_dists[std::min(sua_end_idx+1, reach_dists.size()-1)].reach_dist * (1-chi) ){ return false; }
         if( sua_begin_idx - sda.end_idx < min_pts - 3 ) { return false; }
         //TODO: Checked conditions 1, 2, 3a?
+		return true;
     };
 
     for( std::size_t idx = 0; idx<reach_dists.size(); idx++ ){
         double reach_i = reach_dists[idx].reach_dist;
-        if( reach_i > mib){ mib = reach_i; }
+        
         //Start of Steep Down Area?
         if( idx < reach_dists.size()-1 && is_steep_down_pt(idx) ){
+			if ( reach_i > mib ) { mib = reach_i; }
             filter_sdas();
             std::size_t sda_end_idx = get_sda_end(idx);
             SDAs.push_back( SDA(idx, sda_end_idx, 0.0) );
@@ -550,8 +553,8 @@ std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::ve
         else if( idx < reach_dists.size()-1 && is_steep_up_pt(idx) ){
             filter_sdas();
             std::size_t sua_end_idx = get_sua_end(idx);
-
-            for( const auto& sda:SDAs ){
+			
+            for( auto& sda:SDAs ){
                 if( valid_combination (sda, idx, sua_end_idx) ){
                     clusters.push_back( cluster_borders(sda, idx, sua_end_idx) );
                 }
@@ -559,6 +562,7 @@ std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::ve
             idx = sua_end_idx;
             if( idx < reach_dists.size()-1 ){ mib = reach_dists[idx+1].reach_dist; }
         }
+		else{ if ( reach_i > mib ) { mib = reach_i; } }
     }
     return clusters;
 }
