@@ -103,6 +103,14 @@ void test_5() {
 	assert( epsilon_est >2.236750 && epsilon_est <2.236751 );
 }
 
+void test_6(){
+    std::vector<optics::reachability_dist> reach_dists = {
+        {1,10.0}, {2,9.0}, {3,9.0}, {4, 5.0} //SDA
+    };
+    double chi = 0.1;
+    std::size_t min_pts = 4;
+    optics::get_chi_clusters( reach_dists, chi, min_pts );
+}
 
 int main()
 {
@@ -115,4 +123,6 @@ int main()
 	test_4();
 
 	test_5();
+
+	test_6();
 }

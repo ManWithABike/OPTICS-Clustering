@@ -308,49 +308,6 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 }
 
 
-inline std::vector<std::vector<std::size_t>> get_cluster_indices( const std::vector<reachability_dist>& reach_dists, double reachability_threshold ) {
-	assert( reach_dists.front().reach_dist < 0.0 );
-	std::vector<std::vector<std::size_t>> result;
-	for ( const auto& r : reach_dists ) {
-		if ( r.reach_dist < 0.0 || r.reach_dist >= reachability_threshold ) {
-			result.push_back( { r.point_index } );
-		}
-		else {
-			result.back().push_back( r.point_index );
-		}
-	}
-	return result;
-}
-
-template<typename T, std::size_t dimension>
-std::vector<std::vector<std::array<T, dimension>>> get_cluster_points( const std::vector<reachability_dist>& reach_dists, double reachability_threshold, const std::vector<std::array<T, dimension>>& points ) {
-	const auto sorted_reachdist_indices = fplus::unique( fplus::sort_on( []( const reachability_dist& r )->std::size_t { return r.point_index; }, reach_dists ) );
-	assert( sorted_reachdist_indices.size() == points.size() );
-	assert( sorted_reachdist_indices.back().point_index == points.size() - 1 );
-
-	auto clusters = get_cluster_indices( reach_dists, reachability_threshold );
-	std::vector<std::vector<std::array<T, dimension>>> result;
-	result.reserve( clusters.size() );
-	for ( const auto& cluster_indices : clusters ) {
-		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
-	}
-	return result;
-}
-
-template<typename T, std::size_t dimension>
-std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points( const std::vector<reachability_dist>& reach_dists, double reachability_threshold, const std::vector<geom::Vec<T, dimension>>& points ) {
-	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists ) );
-	assert( sorted_reachdists.size() == points.size() );
-	assert( sorted_reachdists.back() == points.size() - 1 );
-
-	auto clusters = get_cluster_indices( reach_dists, reachability_threshold );
-	std::vector<geom::Vec<T, dimension>> result;
-	result.reserve( clusters.size() );
-	for ( const auto& cluster_indices : clusters ) {
-		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
-	}
-	return result;
-}
 
 /**Exports a list of reachability distances into a csv file.
 * If switch replace_nodists is set (as by default), points that haven't been assigned a reachability distance will be set to the maximum reachability distance + 1.
@@ -425,6 +382,187 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
     image.save(img_file_name);
 	return;
 }
+
+
+inline std::vector<std::vector<std::size_t>> get_cluster_indices( const std::vector<reachability_dist>& reach_dists, double reachability_threshold, const std::string& reachability_plot_image_path = "") {
+	assert( reach_dists.front().reach_dist < 0.0 );
+	std::vector<std::vector<std::size_t>> result;
+	for ( const auto& r : reach_dists ) {
+		if ( r.reach_dist < 0.0 || r.reach_dist >= reachability_threshold ) {
+			result.push_back( { r.point_index } );
+		}
+		else {
+			result.back().push_back( r.point_index );
+		}
+	}
+    if( reachability_plot_image_path!= ""){
+        draw_reachability_plot( reach_dists, reachability_plot_image_path);
+	}
+	return result;
+}
+
+template<typename T, std::size_t dimension>
+std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
+            const std::vector<reachability_dist>& reach_dists,
+            double reachability_threshold,
+            const std::vector<std::array<T, dimension>>& points,
+            const std::string& reachability_plot_image_path = "" )
+{
+	const auto sorted_reachdist_indices =
+        fplus::unique(
+            fplus::sort_on(
+                []( const reachability_dist& r )->std::size_t { return r.point_index; },
+                reach_dists
+            )
+        );
+	assert( sorted_reachdist_indices.size() == points.size() );
+	assert( sorted_reachdist_indices.back().point_index == points.size() - 1 );
+
+	auto clusters = get_cluster_indices( reach_dists, reachability_threshold );
+	std::vector<std::vector<std::array<T, dimension>>> result;
+	result.reserve( clusters.size() );
+	for ( const auto& cluster_indices : clusters ) {
+		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
+	}
+
+	if( reachability_plot_image_path!= ""){
+        draw_reachability_plot( reach_dists, reachability_plot_image_path);
+	}
+	return result;
+}
+
+template<typename T, std::size_t dimension>
+std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
+        const std::vector<reachability_dist>& reach_dists,
+        double reachability_threshold,
+        const std::vector<geom::Vec<T, dimension>>& points ,
+        const std::string& reachability_plot_image_path = "" )
+{
+	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists ) );
+	assert( sorted_reachdists.size() == points.size() );
+	assert( sorted_reachdists.back() == points.size() - 1 );
+
+	auto clusters = get_cluster_indices( reach_dists, reachability_threshold );
+	std::vector<geom::Vec<T, dimension>> result;
+	result.reserve( clusters.size() );
+	for ( const auto& cluster_indices : clusters ) {
+		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
+	}
+	if( reachability_plot_image_path!= ""){
+        draw_reachability_plot( reach_dists, reachability_plot_image_path);
+	}
+	return result;
+}
+
+struct SDA{
+    SDA( std::size_t begin_idx, std::size_t end_idx, double mib) : begin_idx(begin_idx), end_idx(end_idx), mib(mib){}
+    std::size_t begin_idx;
+    std::size_t end_idx;
+    double mib;
+};
+
+std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts ){
+    std::vector<std::pair<std::size_t, std::size_t>> clusters;
+    std::vector<SDA> SDAs;
+    double mib;
+    const auto is_steep_down_pt = [&reach_dists, &chi](std::size_t idx ){
+        if( idx+1 >= reach_dists.size() ) return true;
+        return reach_dists[idx+1].reach_dist <= reach_dists[idx].reach_dist * (1-chi);
+    };
+        const auto is_steep_up_pt = [&reach_dists, &chi](std::size_t idx ){
+        if( idx+1 >= reach_dists.size() ) return true;
+        return reach_dists[idx+1].reach_dist * (1+chi) >= reach_dists[idx].reach_dist;
+    };
+    const auto filter_sdas = [&chi, &reach_dists, &SDAs, &mib](){
+        SDAs = fplus::keep_if( [&mib, &reach_dists, &chi](const SDA& sda)->bool{
+                    return mib > reach_dists[sda.begin_idx].reach_dist * (1-chi);
+            }, SDAs);
+        for( auto& sda : SDAs){
+                sda.mib = std::max( sda.mib, mib);
+        }
+    };
+
+    const auto get_sda_end = [&chi, &reach_dists, &min_pts, &is_steep_down_pt]( const std::size_t start_idx ) -> std::size_t{
+        assert( is_steep_down_pt(start_idx) );
+        std::size_t last_sd_idx = start_idx;
+        std::size_t idx = start_idx +1;
+        while(start_idx < reach_dists.size()){
+            if( idx - last_sd_idx >= min_pts){ return last_sd_idx; }
+            if( reach_dists[idx].reach_dist > reach_dists[idx-1].reach_dist ){ return last_sd_idx; }
+            if( is_steep_down_pt(idx) ){ last_sd_idx = idx; }
+            idx++;
+        }
+    };
+    const auto get_sua_end = [&chi, &reach_dists, &min_pts, &is_steep_up_pt]( const std::size_t start_idx ) -> std::size_t{
+        assert( is_steep_up_pt(start_idx) );
+        std::size_t last_su_idx = start_idx;
+        std::size_t idx = start_idx +1;
+        while(start_idx < reach_dists.size()){
+            if( idx - last_su_idx >= min_pts){ return last_su_idx; }
+            if( reach_dists[idx] < reach_dists[idx-1] ){ return last_su_idx; }
+            if( is_steep_up_pt(idx) ){ last_su_idx = idx; }
+            idx++;
+        }
+    };
+    const auto cluster_borders = [&reach_dists, &chi]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> std::pair<std::size_t, std::size_t>{
+        double start_reach = reach_dists[sda.begin_idx].reach_dist;
+        double end_reach = reach_dists[sua_end_idx+1].reach_dist;
+        if( geom::in_range(start_reach, end_reach, start_reach*chi) ){
+            return {sda.begin_idx, sua_end_idx };
+        }
+        if( start_reach > end_reach ){
+            std::size_t start_idx = sda.begin_idx +1;
+            while( start_idx <= sda.end_idx && reach_dists[start_idx].reach_dist > end_reach ){
+                start_idx++;
+            }
+            return { start_idx-1, sua_end_idx };
+        }
+        if( start_reach < end_reach ){
+            std::size_t end_idx = sua_end_idx;
+            while( end_idx >= sua_begin_idx && reach_dists[end_idx].reach_dist > start_reach ){
+                end_idx--;
+            }
+            return std::make_pair( sda.begin_idx, end_idx+1 );
+        }
+        assert(false);
+        return {0,0};
+
+    };
+    const auto valid_combination = [&reach_dists, &min_pts]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool{
+        if( sda.mib > reach_dists[sua_end_idx].reach_dist ){ return false; }
+        if( sua_begin_idx - sda.end_idx < min_pts - 3 ) { return false; }
+        //TODO: Checked conditions 1, 2, 3a?
+    };
+
+    for( std::size_t idx = 0; idx<reach_dists.size(); idx++ ){
+        double reach_i = reach_dists[idx].reach_dist;
+        if( reach_i > mib){ mib = reach_i; }
+        //Start of Steep Down Area?
+        if( idx < reach_dists.size()-1 && is_steep_down_pt(idx) ){
+            filter_sdas();
+            std::size_t sda_end_idx = get_sda_end(idx);
+            SDAs.push_back( SDA(idx, sda_end_idx, 0.0) );
+            idx = sda_end_idx;
+            if( idx < reach_dists.size()-1) { mib = reach_dists[idx+1].reach_dist; }
+            continue;
+        }
+        //Start of Steep Up Area?
+        else if( idx < reach_dists.size()-1 && is_steep_up_pt(idx) ){
+            filter_sdas();
+            std::size_t sua_end_idx = get_sua_end(idx);
+
+            for( const auto& sda:SDAs ){
+                if( valid_combination (sda, idx, sua_end_idx) ){
+                    clusters.push_back( cluster_borders(sda, idx, sua_end_idx) );
+                }
+            }
+            idx = sua_end_idx;
+            if( idx < reach_dists.size()-1 ){ mib = reach_dists[idx+1].reach_dist; }
+        }
+    }
+    return clusters;
+}
+
 
 template<typename T>
 bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clusters ) {
