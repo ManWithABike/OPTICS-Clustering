@@ -6,13 +6,13 @@
 
 **Ordering points to identify the clustering structure (OPTICS)** is an algorithm for finding density-based clusters in spatial data. It was [presented](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/background/OPTICS.pdf) by Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel and Jörg Sander in 1999.
 
-##Introduction
+## Introduction
 This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. .
 For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
 This implementation relies on the Boost RTree in order to efficiently find neighbourhoods of a given point.
 
 
-##Usage
+## Usage
 Suppose you have a set of points in R^n, described in cartesion coordinates, and wonder if they have a cluster structure.
 Then you might consider using this library, as it offers an interface that lets you extract threshold-clusters *and* draw the corresponding [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with three lines of code:
 
@@ -30,7 +30,7 @@ int main(){
 ```
 
 
-##Dependencies
+## Dependencies
 Three lightweight header-only libraries:  
 1. [Geometry](https://github.com/CrikeeIP/Geometry)  
 2. [FunctionalPlus](https://github.com/Dobiasd/FunctionalPlus)  
@@ -40,7 +40,7 @@ And boost (::geometry and ::index, to be exact)
 4. [Boost](http://www.boost.org/)
 
 
-##Installation
+## Installation
 Before the installation, make sure you have installed [Boost](http://www.boost.org/).
 Subsequently, you can use one of the following two alternative ways to install OPTICS-Clustering:
 
@@ -90,11 +90,11 @@ g++ --std=c++11 -I../include main.cpp -lX11 -lpthread
 ```
 
 
-##Disclaimer
+## Disclaimer
 
 This librarys functionality initially grew due to my personal need for it - an easy to use clustering algorithm which does not need to know the number of clusters a priori.
 I try my best to make it error free and as comfortable to use as I can. The API still might change in the future. If you have any suggestions, find errors, miss some functions or want to give general feedback/criticism, I'd love to hear from you. Of course, [contributions](https://github.com/CrikeeIP/OPTICS-Clustering/pulls) are also very welcome.
 
-##License
+## License
 
 Distributed under the MIT Software License (X11 license). (See accompanying file LICENSE.)
