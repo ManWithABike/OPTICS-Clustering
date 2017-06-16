@@ -7,14 +7,14 @@
 **Ordering points to identify the clustering structure (OPTICS)** is an algorithm for finding density-based clusters in spatial data. It was [presented](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/background/OPTICS.pdf) by Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel and Jörg Sander in 1999.
 
 ## Introduction
-This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. .
+This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. . It aims at providing an easy-to-use clustering algorithm which does not require knowledge of the number of clusters a priori.
 For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
-This implementation relies on the Boost RTree in order to efficiently find neighbourhoods of a given point.
+The implementation relies on the Boost RTree for efficient neighbourhood queries of a given point.
 
 
 ## Usage
-Suppose you have a set of points in R^n, described in cartesion coordinates, and wonder if they have a cluster structure.
-Then you might consider using this library, as it offers an interface that lets you extract threshold-clusters *and* draw the corresponding [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with three lines of code:
+Suppose you have a set of points in R^n, described in cartesian coordinates, and wonder if they have a cluster structure.
+Then you might consider using this library, as it offers an interface that lets you extract clusters *and* draw the corresponding [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with three lines of code:
 
 ```cpp
 #include <optics/optics.h>
@@ -31,10 +31,9 @@ int main(){
 
 
 ## Dependencies
-Three lightweight header-only libraries:  
+Two lightweight header-only libraries:  
 1. [Geometry](https://github.com/CrikeeIP/Geometry)  
 2. [FunctionalPlus](https://github.com/Dobiasd/FunctionalPlus)  
-3. [CImg](https://github.com/dtschump/CImg)
 
 And boost (::geometry and ::index, to be exact)  
 4. [Boost](http://www.boost.org/)
