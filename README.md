@@ -13,8 +13,8 @@ The implementation relies on the `boost::rtree` to efficiently retrieve the neig
 
 
 ## Usage
-Suppose you have a set of points in R^n, described in cartesian coordinates, and wonder if they have a cluster structure.
-Then you might consider using this library, as it offers an interface that lets you extract clusters *and* draw the corresponding [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png) with three lines of code:
+Suppose you have a set of points in R^n, described in Cartesian coordinates, and wonder if they have a cluster structure.
+Then you might consider using this library, as it offers an interface that lets you visually inspect the cluster structure of the data space (using a [reachability-plot](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/resources/reachabilityplot.png)) - *and* extract those clusters with three lines of code:
 
 ```cpp
 #include <optics/optics.h>
@@ -24,8 +24,8 @@ std::vector<point> points; //Your list of points goes here
 
 int main(){
    auto reach_dists = optics::compute_reachability_dists<T,N>( points, min_pts, epsilon );
-   optics::make_clusters( reach_dists, threshold );
    optics::draw_reachability_plot( reach_dists, "./reachdists.bmp" );
+   auto clusters = optics::get_cluster_indices( reach_dists, threshold );
 }
 ```
 
