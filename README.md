@@ -34,9 +34,9 @@ int main(){
 Two lightweight header-only libraries:  
 1. [Geometry](https://github.com/CrikeeIP/Geometry)  
 2. [FunctionalPlus](https://github.com/Dobiasd/FunctionalPlus)  
-
-And boost (`::geometry` and `::index`, to be exact)  
-4. [Boost](http://www.boost.org/)
+   
+   And boost (`::geometry` and `::index`, to be exact) 
+3. [Boost](http://www.boost.org/)
 
 
 ## Installation
