@@ -7,7 +7,7 @@
 **Ordering points to identify the clustering structure (OPTICS)** is an algorithm for finding density-based clusters in spatial data. It was [presented](https://github.com/CrikeeIP/OPTICS-Clustering/blob/master/background/OPTICS.pdf) by Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel and Jörg Sander in 1999.
 
 ## Introduction
-This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. . It aims at providing an easy-to-use clustering algorithm which does not require knowledge of the number of clusters a priori.
+This repository is home to a **C++** implementation of the OPTICS algorithm as described by Ankherst et al. . It aims at providing an easy-to-use clustering algorithm which does not require knowledge of the number of clusters a priori.  
 For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
 The implementation relies on the Boost RTree for efficient neighbourhood queries of a given point.
 
