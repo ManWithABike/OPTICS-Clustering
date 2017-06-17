@@ -8,8 +8,8 @@
 
 ## Introduction
 This repository is home to a C++ implementation of the OPTICS algorithm as described by Ankherst et al. . It aims at providing an easy-to-use clustering algorithm which does not require knowledge of the number of clusters a priori.  
-For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).
-The implementation relies on the Boost RTree for efficient neighbourhood queries of a given point.
+For further explanation on how the algorithm works, see e.g. [Wikipedia](https://en.wikipedia.org/wiki/OPTICS_algorithm) or [YouTube](https://www.youtube.com/watch?v=8kJjgowewOs).  
+The implementation relies on the `boost::rtree` to efficiently retrieve the neighbourhood of a given point.
 
 
 ## Usage
