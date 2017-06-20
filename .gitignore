@@ -49,3 +49,8 @@ reachdists.bmp
 
 build
 dependencies
+
+#Output
+*Clusters2d.ppm*
+*ReachabilityPlot.ppm*
+*test.cpp*
