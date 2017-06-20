@@ -31,6 +31,7 @@ run
 reachdists.bmp
 
 # VisualStudio
+*.vs*
 *Release*
 *Debug*
 *.iobj
