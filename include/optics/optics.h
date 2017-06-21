@@ -6,21 +6,28 @@
 
 #pragma once
 
-
+#ifndef _HAS_AUTO_PTR_ETC
 #define _HAS_AUTO_PTR_ETC 1
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/index/rtree.hpp>
+#undef _HAS_AUTO_PTR_ETC
+#else
+static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includes in MSVC_17, but has externally already been set to 0");
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/index/rtree.hpp>
+#endif
 
 #include "bgr_image.hpp"
 
 #include <geometry/geometry.hpp>
 #include <fplus/fplus.hpp>
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/index/rtree.hpp>
-
 #include <vector>
 #include <exception>
+
 
 
 
