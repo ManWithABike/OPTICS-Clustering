@@ -51,7 +51,8 @@ void clustering_test_2() {
 	double epsilon_est = optics::epsilon_estimation( points, 2 );
     std::cout << "Epsilon-Estimation: " << epsilon_est << std::endl;
 
-	optics::draw_reachability_plot( reach_dists, "ReachabilityPlot" );
+	auto img = optics::draw_reachability_plot( reach_dists );
+	img.save( "ReachabilityPlot" );
 }
 
 
@@ -301,8 +302,40 @@ void epsilon_estimation_tests(){
 }
 
 
+void tree_tests() {
+	typedef std::pair<std::size_t, std::size_t> cluster;
+	typedef optics::Node<cluster> Node;
+	
+	{
+		optics::Node<cluster> n( { 0,5 } );
+		optics::Tree<cluster> T( n );
+		auto c = T.flatten();
+		assert( c == std::vector<cluster>( { cluster( 0, 5 ) } ) );
+	}
+
+	{
+		optics::Node<cluster> n( { 0,5 } );
+		optics::Tree<cluster> T( n );
+		auto c = T.flatten();
+		assert( c == std::vector<cluster>( { cluster( 0, 5 ) } ) );
+	}
+
+	{
+		optics::Node<cluster> n( { 0,5 } );
+		optics::Tree<cluster> T( n );
+		auto& root = T.get_root();
+		root.add_children( std::vector<Node>( { Node( {1,1} ), Node( {1,2} ), Node( {1,3} ) } ) );
+		std::size_t idx = 1;
+		for ( auto& n : root.get_children() ) {
+			n.add_child( Node( { 2, idx++ } ) );
+		}
+		auto c = T.flatten();
+	}
+}
+
 int main()
 {
+	tree_tests();
 	epsilon_estimation_tests();
 	chi_cluster_tests();
 	clustering_tests();

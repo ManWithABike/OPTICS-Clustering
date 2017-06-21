@@ -21,6 +21,7 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 #endif
 
 #include "bgr_image.hpp"
+#include "Tree.hpp"
 
 #include <geometry/geometry.hpp>
 #include <fplus/fplus.hpp>
@@ -346,9 +347,8 @@ inline void export_reachability_dists( const std::vector<reachability_dist>& rea
 }
 
 
-
-inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_dists, const std::string& img_file_name ) {
-	if ( reach_dists.size() < 2 ) return;
+bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_dists ) {
+	if ( reach_dists.size() < 2 ) return bgr_image(size_2d(0,0));
 	bgr_image image( size_2d( std::max( reach_dists.size(), std::size_t( 100 ) ), 256 ), bgr_col(255,255,255) );
 
 	auto reach_dists_values = fplus::transform( []( const reachability_dist& r )-> double {
@@ -386,8 +386,7 @@ inline void draw_reachability_plot( const std::vector<reachability_dist>& reach_
 	int no_dist_marker = fplus::min( static_cast<int>(image.size().height_ -1), fplus::round( fplus::maximum( reach_dists_values ) + 10.0 ));
 	plot_line_segment( image, img_pos( 0, image.size().height_ - 1 - no_dist_marker ), img_pos( image.size().width_/3, image.size().height_ - 1 - no_dist_marker ), bgr_col( 0, 0, 255 ) ); //ReachDist 1
 
-    image.save(img_file_name);
-	return;
+	return image;
 }
 
 
@@ -403,7 +402,8 @@ inline std::vector<std::vector<std::size_t>> get_cluster_indices( const std::vec
 		}
 	}
     if( reachability_plot_image_path!= ""){
-        draw_reachability_plot( reach_dists, reachability_plot_image_path);
+        auto img = draw_reachability_plot( reach_dists);
+		img.save( reachability_plot_image_path );
 	}
 	return result;
 }
@@ -433,7 +433,8 @@ std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
 	}
 
 	if( reachability_plot_image_path!= ""){
-        draw_reachability_plot( reach_dists, reachability_plot_image_path);
+        auto img = draw_reachability_plot( reach_dists);
+		img.save( reachability_plot_image_path );
 	}
 	return result;
 }
@@ -584,6 +585,18 @@ std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::ve
 }
 
 
+bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<reachability_dist>& reach_dists, const std::string& img_file_name,
+													 const double chi, const std::size_t min_pts )
+{
+	const auto img = draw_reachability_plot( reach_dists );
+	auto chi_clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+
+	const bgr_image img_with_cluster( size_2d( 0, 0 ) );
+
+	return img_with_cluster;
+}
+
+
 template<typename T>
 bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clusters ) {
 	auto box = geom2d::bounding_box( fplus::concat( clusters ) );
@@ -600,7 +613,7 @@ bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clus
 							   img_pos( fplus::round<double, std::size_t>( edge.second.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.second.y() - box.bl().y() ) ),
 							   col );
 		}
-		for ( const auto & pt : cluster ) {
+		for ( const auto& pt : cluster ) {
 			img_pos cluster_pt = img_pos( fplus::round<double, std::size_t>( pt.x() - box.bl().x() ), fplus::round<double, std::size_t>( pt.y() - box.bl().y() ) );
 			plot_circle( cluster_image, cluster_pt, 2, col );
 		}
