@@ -31,11 +31,9 @@ int main(){
 
 
 ## Dependencies
-Two lightweight header-only libraries:  
+Two lightweight header-only libraries, and boost (`::geometry` and `::index`, to be exact) 
 1. [Geometry](https://github.com/CrikeeIP/Geometry)  
 2. [FunctionalPlus](https://github.com/Dobiasd/FunctionalPlus)  
-   
-   And boost (`::geometry` and `::index`, to be exact) 
 3. [Boost](http://www.boost.org/)
 
 
