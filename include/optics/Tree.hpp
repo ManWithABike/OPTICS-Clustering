@@ -8,11 +8,15 @@
 
 namespace optics {
 
+template<typename T>
+class Tree; //forward declaration of class Tree
+
 
 template<typename T>
 class Node {
-	template<typename T>
-	friend class Tree;
+
+	friend class Tree<T>;
+
 public:
 	Node( T data_ ) : data( data_ ) {}
 
@@ -33,7 +37,7 @@ public:
 	}
 
 private:
-	void Node::append_subtree( std::vector<T>& result ) const{
+	void append_subtree( std::vector<T>& result ) const{
 		result.push_back( data );
 		for ( const auto& c : children ) {
 			c.append_subtree(result);
@@ -50,7 +54,7 @@ class Tree {
 public:
 	Tree( Node<T> root_ ) : root( root_ ) {}
 
-	std::vector<T> Tree::flatten() {
+	std::vector<T> flatten() {
 		std::vector<T> result;
 		root.append_subtree( result );
 		return result;

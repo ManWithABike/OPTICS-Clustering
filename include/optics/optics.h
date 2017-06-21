@@ -457,7 +457,8 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
 		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
 	}
 	if( reachability_plot_image_path!= ""){
-        draw_reachability_plot( reach_dists, reachability_plot_image_path);
+        auto img = draw_reachability_plot( reach_dists );
+		img.save( reachability_plot_image_path );
 	}
 	return result;
 }
@@ -585,7 +586,7 @@ std::vector<std::pair<std::size_t, std::size_t>> get_chi_clusters( const std::ve
 }
 
 
-bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<reachability_dist>& reach_dists, const std::string& img_file_name,
+bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<reachability_dist>& reach_dists,
 													 const double chi, const std::size_t min_pts )
 {
 	const auto img = draw_reachability_plot( reach_dists );
