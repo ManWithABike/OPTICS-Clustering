@@ -19,11 +19,16 @@ class Node {
 
 public:
 	Node( T data_ ) : data( data_ ) {}
+	Node( T data_, std::vector<Node<T>> children_ ) : data( data_ ), children(children_) {}
 
 	//void SetData( T data_ ) { data( data_ ); }
-	T get_data( ) { return data; }
-	
+	T get_data() { return data; }
+	T get_data() const { return data; }
+
 	std::vector<Node<T>>& get_children() {
+		return children;
+	}
+	std::vector<Node<T>> get_children() const{
 		return children;
 	}
 
@@ -52,6 +57,7 @@ private:
 template<typename T>
 class Tree {
 public:
+	Tree() :root( { 0,0 } ) {}
 	Tree( Node<T> root_ ) : root( root_ ) {}
 
 	std::vector<T> flatten() {

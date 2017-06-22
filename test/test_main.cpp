@@ -118,7 +118,7 @@ void chi_test_1(){
     };
     double chi = 0.1;
     std::size_t min_pts = 4;
-   auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+   auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
    assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>({ {2, 5}, {0, 10}, { 6,10 } }) ) );
 }
 void chi_test_2() {
@@ -135,7 +135,7 @@ void chi_test_2() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 10 },{ 6,10 }, {11,16} } )) );
 }
 void chi_test_3() {
@@ -152,7 +152,7 @@ void chi_test_3() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{0,16},{ 11,16 } } )) );
 }
 void chi_test_4() {
@@ -169,7 +169,7 @@ void chi_test_4() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{0,16},{ 11,16 } } )) );
 }
 void chi_test_5() {
@@ -186,7 +186,7 @@ void chi_test_5() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{0,16},{ 11,16 } } )) );
 }
 void chi_test_6() {
@@ -202,7 +202,7 @@ void chi_test_6() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 2, 5 },{ 0, 9 },{ 6,10 },{2,15},{ 11,15 } } )) );
 }
 void chi_test_7() {
@@ -218,7 +218,7 @@ void chi_test_7() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 0, 5 },{ 6, 9 },{6,15},{ 11,15 } } )) );
 }
 void chi_test_8() {
@@ -234,7 +234,7 @@ void chi_test_8() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 0, 5 },{ 6, 9 },{ 11,15 } } )) );
 }
 void chi_test_9() {
@@ -249,7 +249,7 @@ void chi_test_9() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 0, 2 },{ 3, 6 },{ 3,12 }, {8,12} } )) );
 }
 void chi_test_10() {
@@ -264,7 +264,7 @@ void chi_test_10() {
 	};
 	double chi = 0.1;
 	std::size_t min_pts = 4;
-	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
 	assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>( { { 0, 2 },{ 3, 6 }, {8,12} } )) );
 }
 
@@ -333,10 +333,99 @@ void tree_tests() {
 	}
 }
 
+bool trees_are_equal( const optics::Node<optics::chi_cluster_indices>& t1, const optics::Node<optics::chi_cluster_indices>& t2 ) {
+	if ( t1.get_data() != t2.get_data() ) {
+		return false;
+	}
+	if ( t1.get_children().size() != t2.get_children().size() ) {
+		return false;
+	}
+	if ( t1.get_children().size() == 0 && t2.get_children().size() == 0 && t1.get_data() == t2.get_data() ) {
+		return true;
+	}
+	return fplus::all(
+		fplus::zip_with( trees_are_equal, t1.get_children(), t2.get_children() )
+	);
+}
+
+void chi_cluster_tree_tests_1() {
+	std::vector<optics::reachability_dist> reach_dists = {
+		{ 1,10.0 },{ 2,9.0 },{ 3,9.0 },{ 4, 5.0 },//SDA
+		{ 5,5.49 },{ 6,5.0 },//Cluster1
+		{ 7, 6.5 },//SUA
+		{ 8,3.0 },//SDA
+		{ 9, 2.9 },{ 10, 2.8 },//Cluster2
+		{ 11, 10.0 },{ 12, 12.0 }//SUA
+	};
+	double chi = 0.1;
+	std::size_t min_pts = 4;
+	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	assert( clusters.size() == 1 );
+	typedef optics::Node<optics::chi_cluster_indices> Node;
+	optics::cluster_tree expected_result =
+	{
+		optics::cluster_tree{
+			{ {0,10},
+				{ { {2,5},  {} },
+				  { {6,10}, {} }
+				}
+			}
+		}
+	};
+	assert( trees_are_equal(clusters.front().get_root(), expected_result.get_root() ) );
+}
+
+
+void chi_cluster_tree_tests_2() {
+	std::vector<optics::chi_cluster_indices> flat_clusters = { 
+		{0,4}, {0,8}, {5,7},
+		{9,10}, {12,13}, {9,17}, {11,17}, {13,14}, {8,20}
+	};
+	
+	typedef optics::Node<optics::chi_cluster_indices> Node;
+	std::vector<optics::cluster_tree> expected_result(
+	{
+		optics::cluster_tree{ 
+			Node({ 0,8 },
+			  { 
+				{ { 0,4 },{} },
+			    { { 5,7 },{} }
+			  })
+			},
+		optics::cluster_tree{ 
+			Node({8,20},
+			  {
+				  { {9,17}, 
+					{
+						{{9,10},{}},
+						{{11,15},{
+							{{12,13},{}},
+							{{13,14},{}}
+						 }}
+				    }}
+			  })}
+	});
+
+	auto clusters = optics::internal::flat_clusters_to_tree( flat_clusters );
+	assert( clusters.size() == 2 );
+	assert( trees_are_equal( clusters[0].get_root(), expected_result[0].get_root() ) );
+	assert( trees_are_equal( clusters[1].get_root(), expected_result[1].get_root() ) );
+}
+
+
+void chi_cluster_tree_tests() {
+	chi_cluster_tree_tests_1();
+	chi_cluster_tree_tests_2();
+
+	std::cout << "Chi-Cluster-Tree tests successful!" << std::endl;
+}
+
+
 int main()
 {
 	tree_tests();
 	epsilon_estimation_tests();
 	chi_cluster_tests();
+	chi_cluster_tree_tests();
 	clustering_tests();
 }

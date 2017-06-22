@@ -24,6 +24,15 @@ struct bgr_col
     std::uint8_t r_;
 };
 
+bool operator == ( const bgr_col& lhs, const bgr_col& rhs ) {
+	return (lhs.b_ == rhs.b_ && lhs.g_ == rhs.g_ && lhs.r_ == rhs.r_);
+}
+
+bool operator != ( const bgr_col& lhs, const bgr_col& rhs ) {
+	return !(lhs == rhs);
+}
+
+
 struct img_pos
 {
     img_pos(std::size_t x, std::size_t y) :
