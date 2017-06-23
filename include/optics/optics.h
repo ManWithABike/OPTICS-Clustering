@@ -359,7 +359,7 @@ bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_di
 	double max_val = fplus::maximum( reach_dists_values );
 	reach_dists_values.push_back( max_val + fplus::max( 30, max_val / 3 ) );//The future no_dist for points which weren't assigned any reachability dist. Has to be at least 30, and scale with max_val. Will be normalized to 256-64
 	reach_dists_values.push_back( 10.0 );//In order to see where 10.0 was mapped after the normalization
-	reach_dists_values = fplus::normalize_min_max( -1, 256 - 64, reach_dists_values );
+	reach_dists_values = fplus::normalize_min_max( -1.0, 256.0 - 64.0, reach_dists_values );
 	//Extract normalized 10.0:
 	double ten = reach_dists_values.back();
 	reach_dists_values.pop_back();

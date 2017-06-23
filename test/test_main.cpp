@@ -13,9 +13,9 @@ void clustering_test_1(){
 			   {-100,-100}, {-102,-100}, {-101,-101}     //cluster 3
 	};
 	auto reach_dists = optics::compute_reachability_dists( points, 2, 10 );
-	for( const auto& x : reach_dists){
+	/*for( const auto& x : reach_dists){
         std::cout << x.to_string() << "; ";
-	}
+	}*/
 
 	auto clusters = optics::get_cluster_indices(reach_dists, 10);
 	assert(clusters.size() == 3);
@@ -24,7 +24,6 @@ void clustering_test_1(){
 	assert( ( fplus::sort( clusters[2] ) == std::vector <std::size_t>({ 6,7,8 }) ) );
 
 	double epsilon_est = optics::epsilon_estimation( points, 2 );
-	std::cout << "Epsilon-Estimation: " << epsilon_est << std::endl;
 }
 
 
@@ -38,9 +37,9 @@ void clustering_test_2() {
 	{ -100,-100 },{ -102,-100 },{ -101,-101 }     //cluster 3
 	};
 	auto reach_dists = optics::compute_reachability_dists( points, 2 );
-	for ( const auto& x : reach_dists ) {
+	/*for ( const auto& x : reach_dists ) {
 		std::cout << x.to_string() << "; ";
-	}
+	}*/
 
 	auto clusters = optics::get_cluster_indices( reach_dists, 2 );
 	assert( clusters.size() == 3 );
@@ -49,8 +48,7 @@ void clustering_test_2() {
 	assert( (fplus::sort( clusters[2] ) == std::vector <std::size_t>( { 6,7,8 } )) );
 
 	double epsilon_est = optics::epsilon_estimation( points, 2 );
-    std::cout << "Epsilon-Estimation: " << epsilon_est << std::endl;
-
+    
 	auto img = optics::draw_reachability_plot( reach_dists );
 	img.save( "ReachabilityPlot" );
 }
@@ -398,7 +396,7 @@ void chi_cluster_tree_tests_2() {
 				  { {9,17}, 
 					{
 						{{9,10},{}},
-						{{11,15},{
+						{{11,17},{
 							{{12,13},{}},
 							{{13,14},{}}
 						 }}
