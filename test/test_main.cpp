@@ -419,6 +419,24 @@ void chi_cluster_tree_tests() {
 }
 
 
+void plot_tests() {
+	std::vector<optics::reachability_dist> reach_dists = {
+		{ 1,10.0 },{ 2,9.0 },{ 3,9.0 },{ 4, 5.0 },//SDA
+		{ 5,5.49 },{ 6,5.0 },//Cluster1
+		{ 7, 6.5 },//SUA
+		{ 8,3.0 },//SDA
+		{ 9, 2.9 },{ 10, 2.8 },//Cluster2
+		{ 11, 10.0 },{ 12, 12.0 }//SUA
+	};
+	double chi = 0.1;
+	std::size_t min_pts = 4;
+	auto img = optics::draw_reachability_plot_with_chi_clusters( reach_dists, chi, min_pts );
+	img.save( "./chi_cluster_img" );
+
+	std::cout << "Plotting tests successful!" << std::endl;
+}
+
+
 int main()
 {
 	tree_tests();
@@ -426,4 +444,5 @@ int main()
 	chi_cluster_tests();
 	chi_cluster_tree_tests();
 	clustering_tests();
+	plot_tests();
 }

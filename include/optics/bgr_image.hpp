@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <fplus/fplus.hpp>
 
 #include <cstdint>
 #include <fstream>
@@ -58,14 +59,12 @@ class bgr_image
 public:
     bgr_image(const size_2d& size) :
         size_(size),
-        data_(size_.area() * 3, bgr_col(0, 0, 0))
-    {
-    };
+        data_(size_.area(), bgr_col(0, 0, 0))
+    {};
 	bgr_image( const size_2d& size, const bgr_col& col ) :
 		size_( size ),
-		data_( size_.area() * 3, col )
-	{
-	};
+		data_( size_.area(), col )
+	{};
     const size_2d& size() const { return size_; }
     const bgr_col& pix(const img_pos& pos) const {
 		if ( pos.y_ >= size().height_ || pos.x_ >= size().width_ ) {
@@ -73,12 +72,21 @@ public:
 		}
         return data_[pos.y_ * size().width_ + pos.x_];
     }
+	const std::vector<bgr_col>& get_data() const{
+		return data_;
+	}
     bgr_col& pix(const img_pos& pos) {
 		if ( pos.y_ >= size().height_ || pos.x_ >= size().width_ ) {
 			throw std::out_of_range( "img_pos " + std::to_string(pos.x_) + "," + std::to_string(pos.y_) + " out of range!" );
 		}
         return data_[pos.y_ * size().width_ + pos.x_];
     }
+	void append_rows( const bgr_image& img ) {
+		assert( img.size().width_ == size().width_ );
+		size_.height_ += img.size().height_;
+		const auto& add_data = img.get_data();
+		data_ = fplus::append( data_, add_data );
+	}
     bool save(const std::string& filepath) const;
 private:
     size_2d size_;
@@ -218,4 +226,5 @@ void plot_circle( bgr_image& image, const img_pos& center, std::size_t radius, c
             err -= 2*x + 1;
         }
     }
+
 }

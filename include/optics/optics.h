@@ -347,9 +347,9 @@ inline void export_reachability_dists( const std::vector<reachability_dist>& rea
 }
 
 
-bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_dists ) {
+bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_dists, std::size_t min_width = 100 ) {
 	if ( reach_dists.size() < 2 ) return bgr_image(size_2d(0,0));
-	bgr_image image( size_2d( std::max( reach_dists.size(), std::size_t( 100 ) ), 256 ), bgr_col(255,255,255) );
+	bgr_image image( size_2d( std::max( reach_dists.size(), min_width ), 256 ), bgr_col(255,255,255) );
 
 	auto reach_dists_values = fplus::transform( []( const reachability_dist& r )-> double {
 		return r.reach_dist;
@@ -359,7 +359,9 @@ bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_di
 	double max_val = fplus::maximum( reach_dists_values );
 	reach_dists_values.push_back( max_val + fplus::max( 30, max_val / 3 ) );//The future no_dist for points which weren't assigned any reachability dist. Has to be at least 30, and scale with max_val. Will be normalized to 256-64
 	reach_dists_values.push_back( 10.0 );//In order to see where 10.0 was mapped after the normalization
+	reach_dists_values.push_back( -1.0 );//In order to have at least one no dist 
 	reach_dists_values = fplus::normalize_min_max( -1.0, 256.0 - 64.0, reach_dists_values );
+	reach_dists_values.pop_back();
 	//Extract normalized 10.0:
 	double ten = reach_dists_values.back();
 	reach_dists_values.pop_back();
@@ -655,26 +657,60 @@ std::vector<cluster_tree> flat_clusters_to_tree( const std::vector<chi_cluster_i
 	return result;
 }
 
+
+inline void draw_cluster( bgr_image& cluster_indicator_img, const Node<chi_cluster_indices>& cluster, const std::size_t depth,
+						  const double x_norm, const std::size_t v_dist ) {
+	std::size_t v_offset = (depth+1)*v_dist;
+	assert( v_offset <= cluster_indicator_img.size().height_ );
+	std::size_t height = cluster_indicator_img.size().height_ - v_offset;
+	img_pos x1( fplus::round<double, std::size_t>(x_norm*cluster.get_data().first), height );
+	img_pos x2( fplus::round<double, std::size_t>( x_norm*cluster.get_data().second), height );
+	bgr_col col( 0, 0, 0 );
+	bgr_col st_col( 0, 255, 0 );
+	bgr_col end_col( 255, 0, 0 );
+	plot_line_segment( cluster_indicator_img, x1, x2, col );
+	draw_pixel( cluster_indicator_img, x1, st_col );
+	draw_pixel( cluster_indicator_img, x2, end_col );
+	cluster_indicator_img.save( "./tmp" );
+	for ( const auto& c : cluster.get_children() ) {
+		draw_cluster( cluster_indicator_img, c, depth+1, x_norm, v_dist );
+	}
+}
+
 }//namepsace internal
 
 
-std::vector<cluster_tree> get_chi_clusters( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts ) {
+inline std::vector<cluster_tree> get_chi_clusters( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts ) {
 	auto clusters_flat = get_chi_clusters_flat( reach_dists, chi, min_pts );
 	return internal::flat_clusters_to_tree( clusters_flat );
 }
 
 
-bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<reachability_dist>& reach_dists,
-													 const double chi, const std::size_t min_pts )
+inline bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<reachability_dist>& reach_dists,
+															const double chi, const std::size_t min_pts,
+															const std::size_t min_width = 100)
 {
-	const auto img = draw_reachability_plot( reach_dists );
-	auto chi_cluster_trees = optics::get_chi_clusters( reach_dists, chi, min_pts );
+	auto img = draw_reachability_plot( reach_dists, min_width );
+	auto cluster_trees = optics::get_chi_clusters( reach_dists, chi, min_pts );
 
-	//std::size_t max_tree_depth = fplus::maximum_on( [](const fplus::tree<>& t)tree_depth( chi_clusters );
+	std::size_t max_tree_depth = 0;
+	for ( const auto& t : cluster_trees ) {
+		auto depth = optics::tree_depth<chi_cluster_indices>( t.get_root() );
+		if ( depth > max_tree_depth ) { max_tree_depth = depth; }
+	}
+	std::size_t v_space = 2;
+	bgr_image cluster_indicator_img( size_2d( img.size().width_, (max_tree_depth +1) * v_space ), bgr_col(255,255,255) );
 	
-	//const bgr_image img_cluster_indicator( size_2d( img.size().width_, (tree_depth+1) * 2 ) );
-	const bgr_image img_cluster_indicator(size_2d(0,0));
-	return img_cluster_indicator;
+	double x_norm = 1;
+	if ( min_width > reach_dists.size() ) {
+		x_norm =  static_cast<double>(min_width)/ static_cast<double>(reach_dists.size()-1);
+	}
+	for ( const auto& t : cluster_trees ) {
+		internal::draw_cluster( cluster_indicator_img, t.get_root(), 0, x_norm, v_space );
+	}
+	cluster_indicator_img.save( "./cluster_indicator" );
+	img.append_rows(cluster_indicator_img);
+	return img;
 }
 
 

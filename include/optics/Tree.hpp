@@ -28,7 +28,7 @@ public:
 	std::vector<Node<T>>& get_children() {
 		return children;
 	}
-	std::vector<Node<T>> get_children() const{
+	const std::vector<Node<T>>& get_children() const{
 		return children;
 	}
 
@@ -69,10 +69,23 @@ public:
 	Node<T>& get_root() {
 		return root;
 	}
+	Node<T> get_root() const{
+		return root;
+	}
 
 private:
 	Node<T> root;
 
 };
+
+
+template<typename T>
+std::size_t tree_depth( const Node<T>& root ) {
+	std::size_t depth = 1;
+	auto child_depths = fplus::transform( tree_depth<T>, root.get_children() );
+	return 1 + (child_depths.empty() ? 0 : fplus::maximum( child_depths ));
+			  
+}
+
 
 }//namespace optics
