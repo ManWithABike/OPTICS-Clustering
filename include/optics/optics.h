@@ -35,6 +35,10 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 namespace optics {
 
 
+typedef std::pair<std::size_t, std::size_t> chi_cluster_indices;
+typedef optics::Tree<chi_cluster_indices> cluster_tree;
+
+
 struct reachability_dist {
 	reachability_dist( std::size_t point_index_, double reach_dist_ ) : point_index( point_index_ ), reach_dist( reach_dist_ ) {}
 
@@ -117,7 +121,7 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 }
 
 template<typename T, std::size_t dimension>
-double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) {
+double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) { //TODO: Speed this up by writing a recursive template for square_dist(boost_pt, geom_pt) like geom::compute_pythagoras 
 	const auto dist = bg::distance( boost_pt, geom_to_boost_point( geom_pt ) );
 	return dist;
 }
@@ -135,13 +139,20 @@ std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, co
 	rtree.query( bgi::intersects( query_box ), std::back_inserter( neighbors ) );
 
 	//keep those with euclidean dist < epsilon
-	auto neighbor_indices = fplus::transform_and_keep_justs( [&point, &epsilon]( const TreeValue<T, N>& tree_val ) ->  fplus::maybe<std::size_t> {
+	std::vector<std::size_t> neighbor_indices;
+	neighbor_indices.reserve( neighbors.size() );
+	for ( const auto& n : neighbors ) {
+		if ( dist<T, N>( n.first, point ) <= epsilon ) {
+			neighbor_indices.push_back( n.second );
+		}
+	}
+	/*auto neighbor_indices = fplus::transform_and_keep_justs( [&point, &epsilon]( const TreeValue<T, N>& tree_val ) ->  fplus::maybe<std::size_t> {
 		if ( dist<T,N>( tree_val.first, point ) > epsilon ) {
 			return {};
 		}
 		return tree_val.second;
 	}, neighbors );
-
+	*/
 	return neighbor_indices;
 }
 
@@ -453,6 +464,60 @@ std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
 }
 
 
+inline std::vector<std::vector<std::size_t>> get_cluster_indices(
+	const std::vector<reachability_dist>& reach_dists,
+	const std::vector<chi_cluster_indices>& clusters )
+{
+	std::vector<std::vector<std::size_t>> result;
+	result.reserve( clusters.size() );
+	for ( const auto& c : clusters ) {
+		result.push_back( {} );
+		result.back().reserve( c.second - c.first + 1 );
+		for ( std::size_t idx = c.first; idx <= c.second; idx++ ) {
+			const auto& r = reach_dists[idx];
+			result.back().push_back( r.point_index );
+		}
+	}
+	return result;
+}
+
+
+
+template<typename T, std::size_t dimension>
+std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
+	const std::vector<reachability_dist>& reach_dists,
+	const std::vector<chi_cluster_indices>& clusters,
+	const std::vector<geom::Vec<T, dimension>>& points)
+{
+	auto cluster_indices = get_cluster_indices( reach_dists, clusters );
+
+	std::vector<geom::Vec<T, dimension>> result;
+	result.reserve( cluster_indices.size() );
+	for ( const auto& cluster_indices : clusters ) {
+		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
+	}
+	
+	return result;
+}
+
+template<typename T, std::size_t dimension>
+std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
+	const std::vector<reachability_dist>& reach_dists,
+	const std::vector<chi_cluster_indices>& clusters,
+	const std::vector<std::array<T, dimension>>& points
+	)
+{
+	auto clusters_indices = get_cluster_indices( reach_dists, clusters );
+	std::vector<std::vector<std::array<T, dimension>>> result;
+	result.reserve( clusters_indices.size() );
+	for ( const auto& cluster_indices : clusters_indices ) {
+		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
+	}
+	return result;
+}
+
+
+
 template<typename T, std::size_t dimension>
 std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
         const std::vector<reachability_dist>& reach_dists,
@@ -460,7 +525,7 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
         const std::vector<geom::Vec<T, dimension>>& points ,
         const std::string& reachability_plot_image_path = "" )
 {
-	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists ) );
+	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists ) );//TODO: Debug raus
 	assert( sorted_reachdists.size() == points.size() );
 	assert( sorted_reachdists.back() == points.size() - 1 );
 
@@ -486,8 +551,7 @@ struct SDA{
 };
 
 
-typedef std::pair<std::size_t, std::size_t> chi_cluster_indices;
-typedef optics::Tree<chi_cluster_indices> cluster_tree;
+
 
 
 std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts ){

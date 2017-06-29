@@ -81,11 +81,35 @@ private:
 
 template<typename T>
 std::size_t tree_depth( const Node<T>& root ) {
-	std::size_t depth = 1;
 	auto child_depths = fplus::transform( tree_depth<T>, root.get_children() );
 	return 1 + (child_depths.empty() ? 0 : fplus::maximum( child_depths ));
 			  
 }
 
+template<typename T>
+std::size_t tree_size( const Node<T>& root ) {
+	std::size_t size = 1;
+	auto child_sizes = fplus::transform( tree_size<T>, root.get_children() );
+	return 1 + fplus::sum( child_sizes );
+}
+
+namespace internal{
+	template<typename T> 
+	void dfs_helper( const Node<T>& n, std::vector<T>& result ) {
+		result.push_back( n.get_data() );
+		for ( const auto& c : n.get_children() ) {
+			dfs_helper( c, result );
+		}
+	}
+}//namespace internal
+
+
+template<typename T>
+std::vector<T> flatten_dfs( const Tree<T>& t ) {
+	std::vector<T> result;
+	result.reserve( tree_size( t.get_root() ) );
+	internal::dfs_helper( t.get_root(), result );
+	return result;
+}
 
 }//namespace optics
