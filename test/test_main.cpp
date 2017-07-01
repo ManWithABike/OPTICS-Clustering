@@ -22,8 +22,6 @@ void clustering_test_1(){
 	assert( ( fplus::sort( clusters[0] ) == std::vector <std::size_t>({ 0,1,2 }) ) );
 	assert( ( fplus::sort( clusters[1] ) == std::vector <std::size_t>({ 3,4,5 }) ) );
 	assert( ( fplus::sort( clusters[2] ) == std::vector <std::size_t>({ 6,7,8 }) ) );
-
-	double epsilon_est = optics::epsilon_estimation( points, 2 );
 }
 
 
@@ -47,8 +45,6 @@ void clustering_test_2() {
 	assert( (fplus::sort( clusters[1] ) == std::vector <std::size_t>( { 3,4,5 } )) );
 	assert( (fplus::sort( clusters[2] ) == std::vector <std::size_t>( { 6,7,8 } )) );
 
-	double epsilon_est = optics::epsilon_estimation( points, 2 );
-    
 	auto img = optics::draw_reachability_plot( reach_dists );
 	img.save( "ReachabilityPlot" );
 }
@@ -117,7 +113,10 @@ void chi_test_1(){
     double chi = 0.1;
     std::size_t min_pts = 4;
    auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
-   assert( (clusters == std::vector<std::pair<std::size_t, std::size_t>>({ {2, 5}, {0, 10}, { 6,10 } }) ) );
+   std::vector<std::pair<std::size_t, std::size_t>> exp ({ {2, 5}, {0, 11}, { 6,10 } });
+   std::string clusters_str = fplus::show(clusters);
+   std::string res_str = fplus::show(exp);
+   assert( clusters == exp );
 }
 void chi_test_2() {
 	std::vector<optics::reachability_dist> reach_dists = {
@@ -303,7 +302,7 @@ void epsilon_estimation_tests(){
 void tree_tests() {
 	typedef std::pair<std::size_t, std::size_t> cluster;
 	typedef optics::Node<cluster> Node;
-	
+
 	{
 		optics::Node<cluster> n( { 0,5 } );
 		optics::Tree<cluster> T( n );
@@ -359,11 +358,11 @@ void chi_cluster_tree_tests_1() {
 	std::size_t min_pts = 4;
 	auto clusters = optics::get_chi_clusters( reach_dists, chi, min_pts );
 	assert( clusters.size() == 1 );
-	typedef optics::Node<optics::chi_cluster_indices> Node;
+
 	optics::cluster_tree expected_result =
 	{
 		optics::cluster_tree{
-			{ {0,10},
+			{ {0,11},
 				{ { {2,5},  {} },
 				  { {6,10}, {} }
 				}
@@ -375,25 +374,25 @@ void chi_cluster_tree_tests_1() {
 
 
 void chi_cluster_tree_tests_2() {
-	std::vector<optics::chi_cluster_indices> flat_clusters = { 
+	std::vector<optics::chi_cluster_indices> flat_clusters = {
 		{0,4}, {0,8}, {5,7},
 		{9,10}, {12,13}, {9,17}, {11,17}, {13,14}, {8,20}
 	};
-	
+
 	typedef optics::Node<optics::chi_cluster_indices> Node;
 	std::vector<optics::cluster_tree> expected_result(
 	{
-		optics::cluster_tree{ 
+		optics::cluster_tree{
 			Node({ 0,8 },
-			  { 
+			  {
 				{ { 0,4 },{} },
 			    { { 5,7 },{} }
 			  })
 			},
-		optics::cluster_tree{ 
+		optics::cluster_tree{
 			Node({8,20},
 			  {
-				  { {9,17}, 
+				  { {9,17},
 					{
 						{{9,10},{}},
 						{{11,17},{

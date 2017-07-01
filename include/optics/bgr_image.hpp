@@ -25,19 +25,19 @@ struct bgr_col
     std::uint8_t r_;
 };
 
-bool operator == ( const bgr_col& lhs, const bgr_col& rhs ) {
+inline bool operator == ( const bgr_col& lhs, const bgr_col& rhs ) {
 	return (lhs.b_ == rhs.b_ && lhs.g_ == rhs.g_ && lhs.r_ == rhs.r_);
 }
 
-bool operator != ( const bgr_col& lhs, const bgr_col& rhs ) {
+inline bool operator != ( const bgr_col& lhs, const bgr_col& rhs ) {
 	return !(lhs == rhs);
 }
 
-bgr_col operator + ( const bgr_col& lhs, const bgr_col& rhs ) {
+inline bgr_col operator + ( const bgr_col& lhs, const bgr_col& rhs ) {
 	return bgr_col(lhs.b_+rhs.b_, lhs.g_+rhs.g_, lhs.r_+rhs.r_);
 }
 
-bgr_col operator * ( const bgr_col&col, const double factor ) {
+inline bgr_col operator * ( const bgr_col&col, const double factor ) {
 	std::uint8_t b = fplus::round<double,std::uint8_t>(static_cast<double>(col.b_) * factor);
 	std::uint8_t g = fplus::round<double, std::uint8_t>( static_cast<double>(col.g_) * factor );
 	std::uint8_t r = fplus::round<double, std::uint8_t>( static_cast<double>(col.r_) * factor );
@@ -104,7 +104,7 @@ private:
     std::vector<bgr_col> data_;
 };
 
-bool bgr_image::save(const std::string& filepath) const
+inline bool bgr_image::save(const std::string& filepath) const
 {
     std::ofstream file(filepath +".ppm", std::fstream::binary);
     if (file.bad())
@@ -131,7 +131,7 @@ return true;
 }
 
 namespace internal {
-	std::vector<img_pos> line_pixel( const img_pos& p1, const img_pos& p2 ) {
+	inline std::vector<img_pos> line_pixel( const img_pos& p1, const img_pos& p2 ) {
 		double dist = std::ceil( std::sqrt( (p2.x_ - p1.x_)*(p2.x_ - p1.x_) + (p2.y_ - p1.y_)*(p2.y_ - p1.y_) ) );
 
 		std::vector<img_pos> result;
@@ -196,7 +196,7 @@ namespace internal {
 		return result;
 	}
 
-	double line_dist( const img_pos& p1, const img_pos& p2, const img_pos& p ) {
+	inline double line_dist( const img_pos& p1, const img_pos& p2, const img_pos& p ) {
 		double x1 = static_cast<double>(p1.x_);
 		double y1 = static_cast<double>(p1.y_);
 		double x2 = static_cast<double>(p2.x_);
@@ -210,14 +210,14 @@ namespace internal {
 }//namespace internal
 
 
-void plot_pixel( bgr_image& image, const img_pos& p, const bgr_col& col ) {
+inline void plot_pixel( bgr_image& image, const img_pos& p, const bgr_col& col ) {
 	if ( p.y_ >= image.size().height_ || p.x_ >= image.size().width_ ) {
 		return;
 	}
 	image.pix( p ) = col;
 }
 
-void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, const bgr_col& col )
+inline void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, const bgr_col& col )
 {
 	auto pixel = internal::line_pixel( p1, p2 );
 	for ( const auto& p : pixel ) {
@@ -225,7 +225,7 @@ void plot_line_segment( bgr_image& image, const img_pos& p1, const img_pos& p2, 
 	}
 }
 
-void plot_line_segment_antialiased( bgr_image& image, const img_pos& p1, const img_pos& p2, const bgr_col& col )
+inline void plot_line_segment_antialiased( bgr_image& image, const img_pos& p1, const img_pos& p2, const bgr_col& col )
 {
 	auto pixel = internal::line_pixel( p1, p2 );
 	for ( std::size_t idx = 1; idx < pixel.size()-1; idx+=2){
@@ -244,7 +244,7 @@ void plot_line_segment_antialiased( bgr_image& image, const img_pos& p1, const i
 	}
 }
 
-void plot_circle( bgr_image& image, const img_pos& center, std::size_t radius, const bgr_col& col)
+inline void plot_circle( bgr_image& image, const img_pos& center, std::size_t radius, const bgr_col& col)
 {
 	if ( radius == 0 ) {
 		plot_pixel( image, center, col );

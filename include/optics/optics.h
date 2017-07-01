@@ -121,7 +121,7 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 }
 
 template<typename T, std::size_t dimension>
-double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) { //TODO: Speed this up by writing a recursive template for square_dist(boost_pt, geom_pt) like geom::compute_pythagoras 
+double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) { //TODO: Speed this up by writing a recursive template for square_dist(boost_pt, geom_pt) like geom::compute_pythagoras
 	const auto dist = bg::distance( boost_pt, geom_to_boost_point( geom_pt ) );
 	return dist;
 }
@@ -358,7 +358,7 @@ inline void export_reachability_dists( const std::vector<reachability_dist>& rea
 }
 
 
-bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_dists, std::size_t min_width = 100 ) {
+inline bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_dists, std::size_t min_width = 100 ) {
 	if ( reach_dists.size() < 2 ) return bgr_image(size_2d(0,0));
 	bgr_image image( size_2d( std::max( reach_dists.size(), min_width ), 256 ), bgr_col(255,255,255) );
 
@@ -370,7 +370,7 @@ bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_di
 	double max_val = fplus::maximum( reach_dists_values );
 	reach_dists_values.push_back( max_val + fplus::max( 30, max_val / 3 ) );//The future no_dist for points which weren't assigned any reachability dist. Has to be at least 30, and scale with max_val. Will be normalized to 256-64
 	reach_dists_values.push_back( 10.0 );//In order to see where 10.0 was mapped after the normalization
-	reach_dists_values.push_back( -1.0 );//In order to have at least one no dist 
+	reach_dists_values.push_back( -1.0 );//In order to have at least one no dist
 	reach_dists_values = fplus::normalize_min_max( -1.0, 256.0 - 64.0, reach_dists_values );
 	reach_dists_values.pop_back();
 	//Extract normalized 10.0:
@@ -396,7 +396,7 @@ bgr_image draw_reachability_plot( const std::vector<reachability_dist>& reach_di
 	//Fill area under the graph
 	bgr_col fill_col( 177, 177, 177 );
 	for ( std::size_t x = 0; x < image.size().width_; x++ ) {
-		int y = image.size().height_-1; 
+		int y = image.size().height_-1;
 		while ( y >= 0 && image.pix( img_pos( x, y ) ) == bgr_col( 255, 255, 255 ) ) {
 			image.pix( img_pos( x, y ) ) = fill_col;
 			y--;
@@ -489,14 +489,14 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
 	const std::vector<chi_cluster_indices>& clusters,
 	const std::vector<geom::Vec<T, dimension>>& points)
 {
-	auto cluster_indices = get_cluster_indices( reach_dists, clusters );
+	auto clusters_indices = get_cluster_indices( reach_dists, clusters );
 
 	std::vector<geom::Vec<T, dimension>> result;
-	result.reserve( cluster_indices.size() );
+	result.reserve( clusters_indices.size() );
 	for ( const auto& cluster_indices : clusters ) {
 		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
 	}
-	
+
 	return result;
 }
 
@@ -544,7 +544,7 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
 
 
 struct SDA{
-    SDA( std::size_t begin_idx, std::size_t end_idx, double mib) : begin_idx(begin_idx), end_idx(end_idx), mib(mib){}
+    SDA( std::size_t begin_idx_, std::size_t end_idx_, double mib_) : begin_idx(begin_idx_), end_idx(end_idx_), mib(mib_){}
     std::size_t begin_idx;
     std::size_t end_idx;
     double mib;
@@ -554,75 +554,81 @@ struct SDA{
 
 
 
-std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts ){
+inline std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reachability_dist>& reach_dists_, const double chi, std::size_t min_pts ){
     std::vector<std::pair<std::size_t, std::size_t>> clusters;
     std::vector<SDA> SDAs;
+    const std::size_t n_reachdists = reach_dists_.size();
     double mib(0);
     double max_reach(0.0);
-	for( const auto& r :reach_dists ){ if( r.reach_dist > max_reach ) max_reach = r.reach_dist; }
-    const auto get_reach_dist = [&reach_dists, &max_reach](const std::size_t idx) -> double{
-        assert( idx <= reach_dists.size() );
-        if( idx == reach_dists.size() ) return max_reach;
+	for( const auto& r :reach_dists_ ){ if( r.reach_dist > max_reach ) max_reach = r.reach_dist; }
+
+
+    const auto get_reach_dist = [&reach_dists_, &max_reach](const std::size_t idx) -> double{
+        assert( idx <= reach_dists_.size() );
+        if( idx == reach_dists_.size() ) return max_reach;
 		if( idx == 0 ) return max_reach;
-        return reach_dists[idx].reach_dist;
+		const auto r = reach_dists_[idx].reach_dist;
+        return ((r<0) ? max_reach : r);
     };
-    const auto is_steep_down_pt = [&reach_dists, &chi](std::size_t idx ){
+    const auto is_steep_down_pt = [&reach_dists_, &chi](std::size_t idx ){
         if( idx == 0 ) return true;
-        if( idx+1 >= reach_dists.size() ) return false;
-        return reach_dists[idx+1].reach_dist <= reach_dists[idx].reach_dist * (1-chi);
+        if( idx+1 >= reach_dists_.size() ) return false;
+        if( reach_dists_[idx].reach_dist < 0 && reach_dists_[idx+1].reach_dist >= 0) return true;
+        return reach_dists_[idx+1].reach_dist <= reach_dists_[idx].reach_dist * (1-chi);
     };
-    const auto is_steep_up_pt = [&reach_dists, &chi](std::size_t idx ){
-        if( idx+1 >= reach_dists.size() ) return true;
-        return reach_dists[idx+1].reach_dist * (1-chi) >= reach_dists[idx].reach_dist;
+    const auto is_steep_up_pt = [&reach_dists_, &chi](std::size_t idx ){
+        if( idx+1 >= reach_dists_.size() ) return true;
+        if( reach_dists_[idx].reach_dist >= 0 && reach_dists_[idx+1].reach_dist < 0) return true;
+        return reach_dists_[idx+1].reach_dist * (1-chi) >= reach_dists_[idx].reach_dist;
     };
-    const auto filter_sdas = [&chi, &reach_dists, &SDAs, &mib, &get_reach_dist](){
-        SDAs = fplus::keep_if( [&mib, &reach_dists, &chi, &get_reach_dist](const SDA& sda)->bool{
+    const auto filter_sdas = [&chi, &SDAs, &mib, &get_reach_dist](){
+        SDAs = fplus::keep_if( [&mib, &chi, &get_reach_dist](const SDA& sda)->bool{
                     return mib <= get_reach_dist(sda.begin_idx) * (1-chi);
             }, SDAs);
 		for ( auto& sda : SDAs ) {
 			sda.mib = std::max( sda.mib, mib );
 		}
     };
-    const auto get_sda_end = [&chi, &reach_dists, &min_pts, &is_steep_down_pt]( const std::size_t start_idx ) -> std::size_t{
+    const auto get_sda_end = [&chi, &n_reachdists, &get_reach_dist, &min_pts, &is_steep_down_pt]( const std::size_t start_idx ) -> std::size_t{
         assert( is_steep_down_pt(start_idx) );
         std::size_t last_sd_idx = start_idx;
         std::size_t idx = start_idx +1;
-        while( idx < reach_dists.size() ){
+        while( idx < n_reachdists ){
             if( idx - last_sd_idx >= min_pts){ return last_sd_idx; }
-            if( reach_dists[idx].reach_dist > reach_dists[idx-1].reach_dist ){ return last_sd_idx; }
+            if( get_reach_dist(idx) > get_reach_dist(idx-1) ){ return last_sd_idx; }
             if( is_steep_down_pt(idx) ){ last_sd_idx = idx; }
             idx++;
         }
-		return std::max( reach_dists.size() - 2, last_sd_idx);
+		return std::max( n_reachdists - 2, last_sd_idx);
 	};
-	const auto get_sua_end = [&chi, &reach_dists, &min_pts, &is_steep_up_pt]( const std::size_t start_idx ) -> std::size_t {
+	const auto get_sua_end = [&chi, &n_reachdists, &get_reach_dist, &min_pts, &is_steep_up_pt]( const std::size_t start_idx ) -> std::size_t {
 		assert( is_steep_up_pt( start_idx ) );
 		std::size_t last_su_idx = start_idx;
 		std::size_t idx = start_idx + 1;
-		while ( idx < reach_dists.size() ) {
+		while ( idx < n_reachdists ) {
 			if ( idx - last_su_idx >= min_pts ) { return last_su_idx; }
-			if ( reach_dists[idx].reach_dist < reach_dists[idx - 1].reach_dist ) { return last_su_idx; }
+			if ( get_reach_dist(idx) < get_reach_dist(idx-1) ) { return last_su_idx; }
 			if ( is_steep_up_pt( idx ) ) { last_su_idx = idx; }
 			idx++;
 		}
-		return std::max( reach_dists.size() - 2, last_su_idx );
+		return std::max( n_reachdists - 2, last_su_idx );
 	};
-	const auto cluster_borders = [&reach_dists, &chi]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> std::pair<std::size_t, std::size_t> {
-		double start_reach = reach_dists[sda.begin_idx].reach_dist;
-		double end_reach = reach_dists[std::min( sua_end_idx + 1, reach_dists.size() - 1 )].reach_dist;
+	const auto cluster_borders = [&get_reach_dist, &n_reachdists, &chi]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> std::pair<std::size_t, std::size_t> {
+		double start_reach = get_reach_dist(sda.begin_idx);
+		double end_reach = get_reach_dist(std::min( sua_end_idx + 1, n_reachdists - 1 ));
 		if ( geom::in_range( start_reach, end_reach, start_reach*chi ) ) {
 			return { sda.begin_idx, sua_end_idx };
 		}
 		if ( start_reach > end_reach ) {
 			std::size_t start_idx = sda.begin_idx + 1;
-			while ( start_idx <= sda.end_idx && reach_dists[start_idx].reach_dist > end_reach ) {
+			while ( start_idx <= sda.end_idx && get_reach_dist(start_idx) > end_reach ) {
 				start_idx++;
 			}
 			return { start_idx - 1, sua_end_idx };
 		}
 		if ( start_reach < end_reach ) {
 			std::size_t end_idx = sua_end_idx;
-			while ( end_idx >= sua_begin_idx && reach_dists[end_idx].reach_dist >= start_reach ) {
+			while ( end_idx >= sua_begin_idx && get_reach_dist(end_idx) >= start_reach ) {
 				end_idx--;
 			}
 			return std::make_pair( sda.begin_idx, end_idx + 1 );
@@ -631,28 +637,29 @@ std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reacha
 		return { 0,0 };
 
 	};
-	const auto valid_combination = [&reach_dists, &chi, &min_pts, &get_reach_dist]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool {
+	const auto valid_combination = [&chi, &min_pts, &get_reach_dist]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool {
 		if ( sda.mib > get_reach_dist( sua_end_idx + 1 ) * (1 - chi) ) { return false; }
 		if ( sua_begin_idx - sda.end_idx < min_pts - 3 ) { return false; }
 		//TODO: Checked conditions 1, 2, 3a?
 		return true;
 	};
 
-	for ( std::size_t idx = 0; idx < reach_dists.size(); idx++ ) {
-		double reach_i = reach_dists[idx].reach_dist;
+
+	for ( std::size_t idx = 0; idx < n_reachdists; idx++ ) {
+		double reach_i = get_reach_dist(idx);
 
 		//Start of Steep Down Area?
-		if ( idx < reach_dists.size() && is_steep_down_pt( idx ) ) {
+		if ( idx < n_reachdists && is_steep_down_pt( idx ) ) {
 			if ( reach_i > mib ) { mib = reach_i; }
 			filter_sdas();
 			std::size_t sda_end_idx = get_sda_end( idx );
 			SDAs.push_back( SDA( idx, sda_end_idx, 0.0 ) );
 			idx = sda_end_idx;
-			if ( idx < reach_dists.size() - 1 ) { mib = reach_dists[idx + 1].reach_dist; }
+			if ( idx < n_reachdists - 1 ) { mib = get_reach_dist(idx+1); }
 			continue;
 		}
 		//Start of Steep Up Area?
-		else if ( idx < reach_dists.size() && is_steep_up_pt( idx ) ) {
+		else if ( idx < n_reachdists && is_steep_up_pt( idx ) ) {
 			filter_sdas();
 			std::size_t sua_end_idx = get_sua_end( idx );
 
@@ -662,7 +669,7 @@ std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reacha
 				}
 			}
 			idx = sua_end_idx;
-			if ( idx < reach_dists.size() - 1 ) { mib = reach_dists[idx + 1].reach_dist; }
+			if ( idx < n_reachdists - 1 ) { mib = get_reach_dist(idx+1); }
 		}
 		else { if ( reach_i > mib ) { mib = reach_i; } }
 	}
@@ -672,7 +679,7 @@ std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reacha
 
 namespace internal{
 
-std::vector<cluster_tree> flat_clusters_to_tree( const std::vector<chi_cluster_indices>& clusters_flat ){
+inline std::vector<cluster_tree> flat_clusters_to_tree( const std::vector<chi_cluster_indices>& clusters_flat ){
 	//sort clusters_flat such that children are ordered before their parents in clusters_flat_sorted
 	std::vector<fplus::maybe<chi_cluster_indices>> clusters_flat_sorted_m( clusters_flat.size(), fplus::nothing<chi_cluster_indices>() );
 	std::size_t next_free_idx = 0;
@@ -762,9 +769,9 @@ inline bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<re
 		auto depth = optics::tree_depth<chi_cluster_indices>( t.get_root() );
 		if ( depth > max_tree_depth ) { max_tree_depth = depth; }
 	}
-	std::size_t v_space = 2;
+	std::size_t v_space = 4;
 	bgr_image cluster_indicator_img( size_2d( img.size().width_, (max_tree_depth +1) * v_space ), bgr_col(255,255,255) );
-	
+
 	double x_norm = 1;
 	if ( min_width > reach_dists.size() ) {
 		x_norm =  static_cast<double>(min_width)/ static_cast<double>(reach_dists.size()-1);

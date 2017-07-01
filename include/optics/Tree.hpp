@@ -18,7 +18,7 @@ class Node {
 	friend class Tree<T>;
 
 public:
-	Node( T data_ ) : data( data_ ) {}
+	Node( T data_ ) : data( data_ ), children({}) {}
 	Node( T data_, std::vector<Node<T>> children_ ) : data( data_ ), children(children_) {}
 
 	//void SetData( T data_ ) { data( data_ ); }
@@ -49,8 +49,8 @@ private:
 		}
 	};
 
-	std::vector<Node<T>> children;
 	T data;
+	std::vector<Node<T>> children;
 };
 
 
@@ -83,18 +83,17 @@ template<typename T>
 std::size_t tree_depth( const Node<T>& root ) {
 	auto child_depths = fplus::transform( tree_depth<T>, root.get_children() );
 	return 1 + (child_depths.empty() ? 0 : fplus::maximum( child_depths ));
-			  
+
 }
 
 template<typename T>
 std::size_t tree_size( const Node<T>& root ) {
-	std::size_t size = 1;
 	auto child_sizes = fplus::transform( tree_size<T>, root.get_children() );
 	return 1 + fplus::sum( child_sizes );
 }
 
 namespace internal{
-	template<typename T> 
+	template<typename T>
 	void dfs_helper( const Node<T>& n, std::vector<T>& result ) {
 		result.push_back( n.get_data() );
 		for ( const auto& c : n.get_children() ) {
