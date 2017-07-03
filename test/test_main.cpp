@@ -386,16 +386,33 @@ void chi_test_11(){
        {735,-1.000000}, {747,-1.000000}, {748,-1.000000}, {754,-1.000000}, {761,-1.000000}, {763,-1.000000}
    };
 
-    double chi = 0.10;
-	std::size_t min_pts = 4;
+   {
+	   double chi = 0.02;
+	   double steep_area_min_diff = 0.15;
+	   std::size_t min_pts = 5;
 
-	auto img = optics::draw_reachability_plot_with_chi_clusters(reach_dists, chi, min_pts);
-	img.save("Chi_Test_11_ReachabilityPlot");
+	   //auto img = optics::draw_reachability_plot_with_chi_clusters( reach_dists, chi, min_pts, steep_area_min_diff );
+	   //img.save( "Chi_Test_11_ReachabilityPlot" );
 
-	auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts );
-	std::vector<std::pair<std::size_t, std::size_t>> expected_result =
-	{ { 0, 2 },{ 3, 6 }, {8,12} };
-	//assert( (clusters == expected_result) );
+	   auto clusters = optics::get_chi_clusters_flat( reach_dists, chi, min_pts, steep_area_min_diff );
+	   std::vector<std::pair<std::size_t, std::size_t>> expected_result =
+	   { { 155, 162 },{ 203, 225 },{ 295, 299 },{ 300, 304 },{ 271, 358 },{ 270, 372 },{ 150, 407 },{ 422, 493 },{ 590, 607 },{ 626, 642 },{ 412, 684 },{ 700, 711 } };
+	   assert( (clusters == expected_result) );
+   }
+
+   {
+	   double chi = 0.1;
+	   double steep_area_min_diff = 0.02;
+	   std::size_t min_pts = 8;
+
+	   //auto img = optics::draw_reachability_plot_with_chi_clusters( reach_dists, chi, min_pts, steep_area_min_diff );
+	   //img.save( "Chi_Test_11_ReachabilityPlot" );
+
+	   auto clusters2 = optics::get_chi_clusters_flat( reach_dists, chi, min_pts, steep_area_min_diff );
+	   std::vector<std::pair<std::size_t, std::size_t>> expected_result =
+	   { { 155, 160 },{ 208, 217 },{ 276, 321 },{ 271, 355 },{ 150, 407 },{ 425, 470 },{ 425, 487 },{ 598, 606 },{ 626, 642 },{ 623, 650 },{ 412, 684 },{ 700, 711 } };
+	   assert( (clusters2 == expected_result) );
+   }
 }
 
 
@@ -561,7 +578,7 @@ void plot_tests() {
 }
 
 
-int main__()
+int main()
 {
 	tree_tests();
 	epsilon_estimation_tests();
