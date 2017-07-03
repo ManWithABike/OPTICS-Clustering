@@ -36,15 +36,20 @@ int main()
 	const auto points = load_points_from_image( "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage.png" );
     std::cout<< "Extracted " << points.size() << " points from the image" << std::endl;
 
-	std::size_t min_pts = 10;
-	auto eps = optics::epsilon_estimation( points, min_pts );
+	std::size_t min_pts = 15;
+	auto eps = 2*optics::epsilon_estimation( points, min_pts );
     std::cout<< "Estimated epsilon = " << eps << std::endl;
 
     std::cout<< "Computing Reachability-Distances..." << std::endl;
 	auto reach_dists = optics::compute_reachability_dists( points, min_pts, eps );
-	for ( std::size_t l = 0; l < 1000; l++ ) {
-		reach_dists = optics::compute_reachability_dists( points, min_pts, eps );
-	}
+	std::cout << "Done!" << std::endl;
+
+	//std::string str = fplus::show(reach_dists);
+	//std::cout << "Written: " << fplus::write_text_file("ReachDists_Text.txt", str)() << std::endl;
+
+	//for ( std::size_t l = 0; l < 1000; l++ ) {
+	//	reach_dists = optics::compute_reachability_dists( points, min_pts, eps );
+	//}
 
 	std::cout<< "Drawing reachability-plot" << std::endl;
 	auto reach_img = optics::draw_reachability_plot( reach_dists );

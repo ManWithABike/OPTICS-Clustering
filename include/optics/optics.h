@@ -43,19 +43,22 @@ struct reachability_dist {
 	reachability_dist( std::size_t point_index_, double reach_dist_ ) : point_index( point_index_ ), reach_dist( reach_dist_ ) {}
 
     std::string to_string() const{
-        return std::to_string( point_index) + ":" + std::to_string( reach_dist );
+        return "{" + std::to_string(point_index) + "," + std::to_string( reach_dist ) +"}";
     }
 	std::size_t point_index;
 	double reach_dist;
 };
 
 inline bool operator<( const reachability_dist& lhs, const reachability_dist& rhs ) {
-	return (lhs.reach_dist == rhs.reach_dist) ? (lhs.point_index < rhs.point_index) : (lhs.reach_dist < rhs.reach_dist);
+	return (lhs.reach_dist <= rhs.reach_dist && lhs.reach_dist >= rhs.reach_dist) ? (lhs.point_index < rhs.point_index) : (lhs.reach_dist < rhs.reach_dist);
 }
 inline bool operator==( const reachability_dist& lhs, const reachability_dist& rhs ) {
-	return (lhs.reach_dist == rhs.reach_dist) && (lhs.point_index == rhs.point_index) ;
+	return (lhs.reach_dist <= rhs.reach_dist && lhs.reach_dist >= rhs.reach_dist) && (lhs.point_index == rhs.point_index) ;
 }
-
+inline std::ostringstream& operator<<( std::ostringstream& stream, const reachability_dist& r ) {
+	stream << r.to_string();
+	return stream;
+}
 
 namespace internal{
 
@@ -568,18 +571,16 @@ inline std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector
         if( idx == reach_dists_.size() ) return max_reach;
 		if( idx == 0 ) return max_reach;
 		const auto r = reach_dists_[idx].reach_dist;
-        return ((r<0) ? max_reach : r);
+        return ((r<0) ? 2*max_reach : r);
     };
-    const auto is_steep_down_pt = [&reach_dists_, &chi](std::size_t idx ){
+    const auto is_steep_down_pt = [&get_reach_dist, &n_reachdists, &chi](std::size_t idx ){
         if( idx == 0 ) return true;
-        if( idx+1 >= reach_dists_.size() ) return false;
-        if( reach_dists_[idx].reach_dist < 0 && reach_dists_[idx+1].reach_dist >= 0) return true;
-        return reach_dists_[idx+1].reach_dist <= reach_dists_[idx].reach_dist * (1-chi);
+        if( idx+1 >= n_reachdists ) return false;
+        return get_reach_dist(idx+1) <= get_reach_dist(idx) * (1-chi);
     };
-    const auto is_steep_up_pt = [&reach_dists_, &chi](std::size_t idx ){
-        if( idx+1 >= reach_dists_.size() ) return true;
-        if( reach_dists_[idx].reach_dist >= 0 && reach_dists_[idx+1].reach_dist < 0) return true;
-        return reach_dists_[idx+1].reach_dist * (1-chi) >= reach_dists_[idx].reach_dist;
+    const auto is_steep_up_pt = [&get_reach_dist, &n_reachdists, &chi](std::size_t idx ){
+        if( idx+1 >= n_reachdists ) return true;
+        return get_reach_dist(idx+1) * (1-chi) >= get_reach_dist(idx);
     };
     const auto filter_sdas = [&chi, &SDAs, &mib, &get_reach_dist](){
         SDAs = fplus::keep_if( [&mib, &chi, &get_reach_dist](const SDA& sda)->bool{
@@ -640,7 +641,6 @@ inline std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector
 	const auto valid_combination = [&chi, &min_pts, &get_reach_dist]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool {
 		if ( sda.mib > get_reach_dist( sua_end_idx + 1 ) * (1 - chi) ) { return false; }
 		if ( sua_begin_idx - sda.end_idx < min_pts - 3 ) { return false; }
-		//TODO: Checked conditions 1, 2, 3a?
 		return true;
 	};
 
