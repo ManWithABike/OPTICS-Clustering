@@ -4,11 +4,17 @@
 // (See accompanying file LICENSE)
 
 #include <vector>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-//#include <opencv2/opencv.hpp>
-#include "../../include/optics/optics.h"
+
+#include <stopwatch/Stopwatch.hpp>
+
+#include "../../include/optics/optics.hpp"
+
+
+
 
 inline std::vector<std::array<int, 2>> load_points_from_image( const std::string& file_path )
 {
@@ -31,8 +37,9 @@ inline std::vector<std::array<int, 2>> load_points_from_image( const std::string
 
 int main()
 {
-	//std::string path = "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage.png";
-	std::string path = "./ClusterImage.png";
+   namespace sw = stopwatch;
+	std::string path = "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage_1.png";
+	//std::string path = "./ClusterImage_1.png";
 	const auto points = load_points_from_image( path );
 	std::cout << "Extracted " << points.size() << " points from the image" << std::endl;
 
@@ -47,24 +54,20 @@ int main()
 	//std::string str = fplus::show(reach_dists);
 	//std::cout << "Written: " << fplus::write_text_file("ReachDists_Text.txt", str)() << std::endl;
 
-	for ( std::size_t l = 0; l < 1000; l++ ) {
+	/*for ( std::size_t l = 0; l < 1000; l++ ) {
 		auto reach_dists_ = optics::compute_reachability_dists( points, min_pts, eps );
 		if ( l % 10 == 0 ) std::cout << l << std::endl;
-	}
+	}*/
 
 	std::cout << "Drawing reachability-plot" << std::endl;
 	auto reach_img = optics::draw_reachability_plot( reach_dists );
 	reach_img.save( "./ReachDists" );
 
+   std::cout << "Drawing 2D-Clusters" << std::endl;
 	{
 		auto clusters = optics::get_cluster_points( reach_dists, 10, points );
 		auto img = optics::draw_2d_clusters( clusters );
 		img.save( "./ClusterImg_10" );
-	}
-	{
-		auto clusters = optics::get_cluster_points( reach_dists, 30, points );
-		auto img = optics::draw_2d_clusters( clusters );
-		img.save( "./ClusterImg_30" );
 	}
 	{
 		auto clusters = optics::get_cluster_points( reach_dists, 20, points );
@@ -72,6 +75,7 @@ int main()
 		img.save( "./ClusterImg_20" );
 	}
 
+   std::cout << "Computing Chi-Clusters" << std::endl;
 	{
 		//Chi Clusters
 		double chi = 0.02;

@@ -21,7 +21,7 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 #endif
 
 #include "bgr_image.hpp"
-#include "Tree.hpp"
+#include "tree.hpp"
 
 #include <geometry/geometry.hpp>
 #include <fplus/fplus.hpp>
@@ -642,7 +642,7 @@ inline std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector
 	const auto valid_combination = [&chi, &steep_area_min_diff, &min_pts, &get_reach_dist]( const SDA& sda, std::size_t sua_begin_idx, std::size_t sua_end_idx ) -> bool {
 		const double f = fplus::max( chi, steep_area_min_diff );
 		if ( sda.mib > get_reach_dist( sua_end_idx + 1 ) * (1 - f) ) { return false; }
-		
+
 		std::size_t sda_middle = (sda.begin_idx + (sda.end_idx- sda.begin_idx) / 2);
 		std::size_t sua_middle = (sua_begin_idx + (sua_end_idx - sua_begin_idx) / 2);
 		if ( sua_middle - sda_middle < min_pts - 2 ) {
@@ -755,7 +755,6 @@ inline void draw_cluster( bgr_image& cluster_indicator_img, const Node<chi_clust
 	plot_line_segment( cluster_indicator_img, x1, x2, col );
 	plot_pixel( cluster_indicator_img, x1, st_col );
 	plot_pixel( cluster_indicator_img, x2, end_col );
-	cluster_indicator_img.save( "./tmp" );
 	for ( const auto& c : cluster.get_children() ) {
 		draw_cluster( cluster_indicator_img, c, depth+1, x_norm, v_dist );
 	}
@@ -793,7 +792,6 @@ inline bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<re
 	for ( const auto& t : cluster_trees ) {
 		internal::draw_cluster( cluster_indicator_img, t.get_root(), 0, x_norm, v_space );
 	}
-	cluster_indicator_img.save( "./cluster_indicator" );
 	img.append_rows(cluster_indicator_img);
 	return img;
 }
@@ -803,7 +801,7 @@ template<typename T>
 bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clusters ) {
 	auto box = geom2d::bounding_box( fplus::concat( clusters ) );
 	bgr_image cluster_image( size_2d( fplus::round<double, std::size_t>(box.get_size().first+1), fplus::round<double, std::size_t>( box.get_size().second+1)), bgr_col(255,255,255) );
-	std::array<bgr_col, 12> colours = { 
+	std::array<bgr_col, 12> colours = {
 		bgr_col( 255,0,0 ), bgr_col( 0,255,0 ), bgr_col(0,0,255),
 		bgr_col(255,255,0), bgr_col(255,0,255), bgr_col(0,255,255),
 		bgr_col( 255,128,128 ), bgr_col( 128,255,128 ), bgr_col( 128,128,255 ),
