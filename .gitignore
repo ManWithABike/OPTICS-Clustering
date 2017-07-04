@@ -51,6 +51,7 @@ build
 dependencies
 
 #Output
-*Clusters2d.ppm*
-*ReachabilityPlot.ppm*
+*.ppm
+!*/Opencv_ClusterImage_Test/ClusterImage_*.ppm
 *test.cpp*
+
