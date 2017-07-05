@@ -7,47 +7,30 @@
 #include "../../include/optics/optics.hpp"
 #include "../../include/optics/Stopwatch.hpp"
 
+#include <random>
+
 namespace sw = stopwatch;
 
 
 //static const std::random_device rd;
 static std::mt19937 gen( 1 );
 
-/*
-template <typename T, std::enable_if_t<>
-using uniform_distribution<T> = std::uniform_real_distribution<T>;
-*/
 
-
-/*
-template <typename T>
-struct uniform_distribution : public std::enable_if_t<std::is_integral_v<T>, std::uniform_int_distribution<T>>
-{
-	uniform_distribution( T a, T b ) : std::uniform_int_distribution<T>( a, b ) {}
-};
-
-template <typename T>
-struct uniform_distribution : public std::enable_if_t<std::is_floating_point_v<T>, std::uniform_real_distribution<T>>
-{
-	uniform_distribution( T a, T b) : std::uniform_real_distribution<T>(a, b) {}
-};
-*/
-
-template <typename T>
-std::enable_if_t<std::is_integral_v<T>, std::uniform_int_distribution<T>> uniform_distribution( T a, T b )
+template <typename T, typename = typename std::enable_if<std::is_integral<T>::value >::type >
+std::uniform_int_distribution<T> uniform_distribution( T a, T b )
 {
 	return std::uniform_int_distribution<T>( a, b );
-};
+}
 
-template <typename T>
-std::enable_if_t<std::is_floating_point_v<T>, std::uniform_real_distribution<T>> uniform_distribution( T a, T b )
+template <typename T, typename = typename std::enable_if<std::is_floating_point<T>::value >::type >
+std::uniform_real_distribution<T> uniform_distribution( T a, T b )
 {
 	return std::uniform_real_distribution<T>( a, b );
-};
+}
 
 
 template<std::size_t dimension, typename type, typename distribution>
-std::array<type, dimension> get_random_point( const distribution& dis ) {
+std::array<type, dimension> get_random_point( distribution& dis ) {
 	std::array<type, dimension> result;
 	for ( std::size_t d = 0; d < dimension; d++ ) {
 		result[d] = dis( gen );
@@ -111,7 +94,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 int main() {
 	std::cout << "OPTICS Benchmark" << std::endl;
 
-	auto mean_time = test<500000, 2, 1000*1000, double, 20>( 10 );
+	test<100000, 2, 1000*1000, double, 10>( 10 );
 
 	return 0;
 }

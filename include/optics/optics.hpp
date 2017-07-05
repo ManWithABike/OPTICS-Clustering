@@ -131,7 +131,7 @@ double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geo
 
 template<typename T, std::size_t N>
 std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
-	static_assert( std::is_signed_v<T>, "Type not allowed. Only Integers, Float & Double supported" );
+	static_assert( std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported" );
 	//produce search box
 	geom::Vec<double, N> eps_vec( epsilon );
 	geom::Vec<double, N> corner1 = (point.as_doubles() - eps_vec);
