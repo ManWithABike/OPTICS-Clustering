@@ -83,6 +83,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	auto dis = uniform_distribution<type>( 0, static_cast<type>(edge_length) );
 
 	//Create n_points random points
+	std::cout << "Creating list of " << n_points << " random points.." << std::endl;
 	std::vector<std::array<type, dimension>> points;
 	points.reserve( n_points );
 	for ( std::size_t n = 1; n <= n_points; n++ ) {
@@ -111,7 +112,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 int main() {
 	std::cout << "OPTICS Benchmark" << std::endl;
 
-	auto mean_time = test<500000, 2, 1000*1000, double, 20>( 10 );
+	auto mean_time = test<100000, 6, 100*100*100, double, 10>( 10 );
 
 	return 0;
 }
