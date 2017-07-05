@@ -3,29 +3,24 @@
 // Distributed under the MIT Software License (X11 license).
 // (See accompanying file LICENSE)
 
+#include "../../include/optics/optics.hpp"
+#include "../../include/optics/bgr_image.hpp"
+
 #include <vector>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <stopwatch/Stopwatch.hpp>
-
-#include "../../include/optics/optics.hpp"
 
 
 
-
-inline std::vector<std::array<int, 2>> load_points_from_image( const std::string& file_path )
+inline std::vector<std::array<std::size_t, 2>> load_points_from_image( const std::string& file_path )
 {
-	const cv::Mat img = cv::imread( file_path, cv::IMREAD_GRAYSCALE );
+	const bgr_image img = imread( file_path );
 	assert( img.size().area() != 0 );
-	std::vector<std::array<int, 2>> result;
-	for ( int y = 0; y < img.rows; ++y )
+	std::vector<std::array<std::size_t, 2>> result;
+	for ( std::size_t y = 0; y < img.size().height_; ++y )
 	{
-		for ( int x = 0; x < img.cols; ++x )
+		for ( std::size_t x = 0; x < img.size().width_; ++x )
 		{
-			if ( img.at<unsigned char>( y, x ) != 255 )
+			if ( img.pix( img_pos(x, y) ) != bgr_col(255,255,255) )
 			{
 				result.push_back( { x, y } );
 			}
@@ -37,9 +32,8 @@ inline std::vector<std::array<int, 2>> load_points_from_image( const std::string
 
 int main()
 {
-   namespace sw = stopwatch;
-	std::string path = "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage_1.png";
-	//std::string path = "./ClusterImage_1.png";
+	//std::string path = "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage_1.png";
+	std::string path = "./test/ClusterImage_Test/ClusterImage_1.ppm";
 	const auto points = load_points_from_image( path );
 	std::cout << "Extracted " << points.size() << " points from the image" << std::endl;
 
@@ -91,4 +85,6 @@ int main()
 		auto chi_cluster_img = optics::draw_2d_clusters( cluster_pts );
 		chi_cluster_img.save( "./ChiClusterImg" );
 	}
+
+	return 0;
 }

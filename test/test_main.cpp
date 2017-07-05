@@ -1,3 +1,9 @@
+// Copyright Ingo Proff 2016.
+// https://github.com/CrikeeIP/OPTICS-Clustering
+// Distributed under the MIT Software License (X11 license).
+// (See accompanying file LICENSE)
+
+
 #include "../include/optics/optics.hpp"
 #include <vector>
 
@@ -410,7 +416,8 @@ void chi_test_11(){
 
 	   auto clusters2 = optics::get_chi_clusters_flat( reach_dists, chi, min_pts, steep_area_min_diff );
 	   std::vector<std::pair<std::size_t, std::size_t>> expected_result =
-	   { {155, 160}, {208, 217}, {276, 321}, {271, 355}, {150, 407}, {425, 470}, {425, 487}, {598, 607}, {626, 642}, {623, 650}, {412, 684}, {700, 711} };
+		{ {155, 160}, {208, 217}, {276, 321}, {271, 355}, {150, 407}, {425, 470},
+		{425, 487}, {598, 606}, {626, 642}, {623, 650}, {412, 684}, {700, 711} };
 	   assert( (clusters2 == expected_result) );
    }
 }
@@ -578,7 +585,7 @@ void plot_tests() {
 }
 
 
-int main()
+int main__()
 {
 	tree_tests();
 	epsilon_estimation_tests();
@@ -586,4 +593,6 @@ int main()
 	chi_cluster_tree_tests();
 	clustering_tests();
 	plot_tests();
+
+	return 0;
 }

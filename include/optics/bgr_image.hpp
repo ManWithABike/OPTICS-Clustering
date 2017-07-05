@@ -14,6 +14,7 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 struct bgr_col
 {
@@ -103,6 +104,73 @@ private:
     size_2d size_;
     std::vector<bgr_col> data_;
 };
+
+inline bgr_image imread( const std::string& path ) {
+	auto bytes = fplus::read_binary_file(path )();
+	if ( bytes.empty() ) { return bgr_image( size_2d(0,0)); }
+	
+	//Split by newlines
+	auto lines = fplus::split_by( 
+		[]( std::uint8_t x ) -> bool {
+		return x == '\n';//fplus::is_whitespace<std::string>( x );
+		}, true, bytes 
+	);
+	
+	//Drop commentary ines
+	lines = fplus::drop_if(
+				[]( const std::vector<std::uint8_t>& x ) -> bool {
+					return x[0] == '#';
+				},
+				lines
+			);
+	auto data = lines.back();
+
+	//Split Header by whitespace
+	auto header_lines = fplus::split_by(
+		[]( std::uint8_t x ) -> bool {
+		return fplus::is_whitespace<std::string>( x );
+	}, true, fplus::join_elem(' ', fplus::init( lines ))
+	);
+
+	std::size_t width(0); std::size_t height(0);
+
+	const auto read_header = [&header_lines, &width, &height]() -> bool {
+		const auto vec_to_str = []( const std::vector<std::uint8_t>& x ) -> std::string {
+			return fplus::transform_convert<std::string>(
+						[]( std::uint8_t x )-> char { return x; },
+						x 
+					);
+		};
+			
+		if ( header_lines.size() != 4) return false;
+		if ( header_lines[0] != std::vector<std::uint8_t>( { 'P','6' } ) )  return false;
+		if ( header_lines[3] != std::vector<std::uint8_t>( { '2', '5', '5' } ) ) return false;
+		std::string w_str = vec_to_str( header_lines[1]);
+		std::string h_str = vec_to_str( header_lines[2] );
+		width = std::stol( w_str );
+		height = std::stol( h_str );
+		if ( width == 0 || height == 0 ) return false;
+
+		return true;
+	};
+
+	if ( !read_header() ) { return bgr_image( size_2d(0,0) ); }
+	bgr_image result( size_2d( width, height ) );
+	
+	//Set data to image
+	auto size = result.size();
+	for ( std::size_t y = 0; y < size.height_; ++y )
+	{
+		for ( std::size_t x = 0; x < size.width_; ++x )
+		{
+			std::size_t col_start = (y* size.width_ + x) * 3;
+			bgr_col col( data[col_start +2 ], data[col_start + 1], data[col_start] );
+			result.pix( img_pos( x, y ) ) = col;
+		}
+	}
+	result.save( path + "_read" );
+	return result;
+}
 
 inline bool bgr_image::save(const std::string& filepath) const
 {
