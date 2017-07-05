@@ -131,14 +131,16 @@ double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geo
 
 template<typename T, std::size_t N>
 std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
+	static_assert( std::is_signed_v<T>, "Type not allowed. Only Integers, Float & Double supported" );
 	//produce search box
 	geom::Vec<double, N> eps_vec( epsilon );
-	geom::Vec<double, N> corner1 = point.as_doubles() - eps_vec;
-	geom::Vec<double, N> corner2 = point.as_doubles() + eps_vec;
-	Box<double, N> query_box( geom_to_boost_point( corner1 ), geom_to_boost_point( corner2 ) ); //TODO: possible speed-up if query-box is of type T (e.g. int) when possible?
+	geom::Vec<double, N> corner1 = (point.as_doubles() - eps_vec);
+	geom::Vec<double, N> corner2 = (point.as_doubles() + eps_vec);
+	Box<double, N> query_box( geom_to_boost_point( corner1 ), geom_to_boost_point( corner2 ) );
 
 	//search neighbors in box (manhattan dist 2*epsilon)
 	std::vector<TreeValue<T, N>> neighbors;
+	neighbors.reserve( 100 );
 	rtree.query( bgi::intersects( query_box ), std::back_inserter( neighbors ) );
 
 	//keep those with euclidean dist < epsilon
@@ -210,7 +212,7 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 			erase_idx_from_set( reachability_dist( o, reachability[o]), seeds );
 			//update reachability
 			reachability[o] = new_reachability_dist;
-			//reinsert seed with new reachability
+			//re-insert seed with new reachability
 			seeds.insert( reachability_dist( o, new_reachability_dist ) );
 		}
 	}
@@ -227,7 +229,7 @@ double epsilon_estimation( const std::vector<geom::Vec<T, dimension>>& points, c
 
 	double d = static_cast<double> (dimension);
 	auto  space = geom::bounding_box( points );
-	double space_volume = geom::product( geom::abs(space.first - space.second) );
+	double space_volume = static_cast<double>(geom::product( geom::abs(space.first - space.second) ));
 	double nominator = space_volume * static_cast<double>(min_pts) * std::tgamma( d/2.0 + 1.0 );
 	double denominator = static_cast<double>(points.size()) * std::sqrt( std::pow( geom::pi, d ) );
 	double r = std::pow( nominator / denominator, 1.0 / d );
@@ -269,7 +271,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 	//std::vector<double> core_dist( points.size(), -1.0f );
 
 	//the rtree for fast nearest neighbour search
-	auto rtree = internal::initialize_rtree( points );
+	const auto rtree = internal::initialize_rtree( points );
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {
 		if ( processed[point_idx] == true ) continue;

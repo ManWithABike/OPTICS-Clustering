@@ -112,24 +112,26 @@ inline bgr_image imread( const std::string& path ) {
 	//Split by newlines
 	auto lines = fplus::split_by( 
 		[]( std::uint8_t x ) -> bool {
-		return x == '\n';//fplus::is_whitespace<std::string>( x );
-		}, true, bytes 
+		return x=='\n' || x == '\r';//fplus::is_whitespace<std::string>( x );
+		}, false, bytes 
 	);
 	
+	if ( lines[0] != std::vector<std::uint8_t>( { 'P','6' } ) )  return bgr_image(size_2d(0,0));
+
 	//Drop commentary ines
-	lines = fplus::drop_if(
+	lines = fplus::drop_while(
 				[]( const std::vector<std::uint8_t>& x ) -> bool {
 					return x[0] == '#';
 				},
-				lines
+				fplus::tail(std::move(lines))
 			);
 	auto data = lines.back();
 
 	//Split Header by whitespace
 	auto header_lines = fplus::split_by(
 		[]( std::uint8_t x ) -> bool {
-		return fplus::is_whitespace<std::string>( x );
-	}, true, fplus::join_elem(' ', fplus::init( lines ))
+			return fplus::is_whitespace<std::string>( x );
+		}, false, fplus::join_elem(' ', fplus::init( lines ))
 	);
 
 	std::size_t width(0); std::size_t height(0);
@@ -142,11 +144,10 @@ inline bgr_image imread( const std::string& path ) {
 					);
 		};
 			
-		if ( header_lines.size() != 4) return false;
-		if ( header_lines[0] != std::vector<std::uint8_t>( { 'P','6' } ) )  return false;
-		if ( header_lines[3] != std::vector<std::uint8_t>( { '2', '5', '5' } ) ) return false;
-		std::string w_str = vec_to_str( header_lines[1]);
-		std::string h_str = vec_to_str( header_lines[2] );
+		if ( header_lines.size() != 3) return false;
+		if ( header_lines[2] != std::vector<std::uint8_t>( { '2', '5', '5' } ) ) return false;
+		std::string w_str = vec_to_str( header_lines[0]);
+		std::string h_str = vec_to_str( header_lines[1] );
 		width = std::stol( w_str );
 		height = std::stol( h_str );
 		if ( width == 0 || height == 0 ) return false;
@@ -155,9 +156,10 @@ inline bgr_image imread( const std::string& path ) {
 	};
 
 	if ( !read_header() ) { return bgr_image( size_2d(0,0) ); }
-	bgr_image result( size_2d( width, height ) );
+	if ( data.size() != width*height * 3 ) { return bgr_image( size_2d( 0, 0 ) ); }
 	
 	//Set data to image
+	bgr_image result( size_2d( width, height ) );
 	auto size = result.size();
 	for ( std::size_t y = 0; y < size.height_; ++y )
 	{

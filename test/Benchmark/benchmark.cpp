@@ -13,9 +13,41 @@ namespace sw = stopwatch;
 //static const std::random_device rd;
 static std::mt19937 gen( 1 );
 
+/*
+template <typename T, std::enable_if_t<>
+using uniform_distribution<T> = std::uniform_real_distribution<T>;
+*/
 
-template<std::size_t dimension, typename type>
-std::array<type, dimension> get_random_point( const std::uniform_real_distribution<type>& dis ) {
+
+/*
+template <typename T>
+struct uniform_distribution : public std::enable_if_t<std::is_integral_v<T>, std::uniform_int_distribution<T>>
+{
+	uniform_distribution( T a, T b ) : std::uniform_int_distribution<T>( a, b ) {}
+};
+
+template <typename T>
+struct uniform_distribution : public std::enable_if_t<std::is_floating_point_v<T>, std::uniform_real_distribution<T>>
+{
+	uniform_distribution( T a, T b) : std::uniform_real_distribution<T>(a, b) {}
+};
+*/
+
+template <typename T>
+std::enable_if_t<std::is_integral_v<T>, std::uniform_int_distribution<T>> uniform_distribution( T a, T b )
+{
+	return std::uniform_int_distribution<T>( a, b );
+};
+
+template <typename T>
+std::enable_if_t<std::is_floating_point_v<T>, std::uniform_real_distribution<T>> uniform_distribution( T a, T b )
+{
+	return std::uniform_real_distribution<T>( a, b );
+};
+
+
+template<std::size_t dimension, typename type, typename distribution>
+std::array<type, dimension> get_random_point( const distribution& dis ) {
 	std::array<type, dimension> result;
 	for ( std::size_t d = 0; d < dimension; d++ ) {
 		result[d] = dis( gen );
@@ -34,8 +66,8 @@ double eps_guess(double space_volume, std::size_t n_points, std::size_t dim ) {
 }
 
 
-template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type>
-std::uint64_t test( std::size_t laps, std::size_t min_pts, double epsilon = -1.0 ) {
+template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type, std::size_t laps>
+std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	static_assert(dimension > 0, "Dimension must be >0");
 
 	//Space parameters
@@ -46,7 +78,9 @@ std::uint64_t test( std::size_t laps, std::size_t min_pts, double epsilon = -1.0
 	std::cout << "Estimated space per point: " << eps << std::endl;
 	
 	//Create a distribution that outputs coordinates between 0 and edge_length
-	std::uniform_real_distribution<type> dis( 0, edge_length );
+
+	//std::uniform_real_distribution<type> dis( 0, edge_length );
+	auto dis = uniform_distribution<type>( 0, static_cast<type>(edge_length) );
 
 	//Create n_points random points
 	std::vector<std::array<type, dimension>> points;
@@ -56,13 +90,16 @@ std::uint64_t test( std::size_t laps, std::size_t min_pts, double epsilon = -1.0
 	}
 
 	//Let's go
+	std::cout << "Start " << laps << " computations of  optics::compute_reachability_dist()" << std::endl;
 	sw::Stopwatch watch;
 	for ( std::size_t lap = 1; lap <= laps; lap++ ) {
+		if ( lap % (laps/10) == 0 ) std::cout << lap << "..";
 		optics::compute_reachability_dists( points, min_pts, epsilon );
 		watch.lap();
 	}
 
 	auto elapsed = watch.elapsed_laps();
+	std::cout << std::endl;
 	std::cout << "Lap times [ms]: " << sw::show_times( elapsed.second ) << std::endl;
 	std::cout << "Total time: " << elapsed.first << "ms" << std::endl;
 	std::cout << "Mean time: " << elapsed.first/laps << "ms" << std::endl;
@@ -72,9 +109,9 @@ std::uint64_t test( std::size_t laps, std::size_t min_pts, double epsilon = -1.0
 
 
 int main() {
-	std::cout << "Hello World";
+	std::cout << "OPTICS Benchmark" << std::endl;
 
-	auto mean_time = test<100000, 2, 1000*1000, float>( 10, 10 );
+	auto mean_time = test<500000, 2, 1000*1000, double, 20>( 10 );
 
 	return 0;
 }
