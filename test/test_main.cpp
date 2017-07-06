@@ -58,12 +58,12 @@ void clustering_test_2() {
 
 void clustering_test_3(){
     static const int N = 2;
-	typedef std::array<unsigned char, N> point; //A list of N cartesian coordinates makes a point
+	typedef std::array<char, N> point; //A list of N cartesian coordinates makes a point
 
     std::vector<point> points; //Your list of points goes here
 	points = { {100,100}, {102,100}, {101,101},           //cluster 1
 			   {1,1}, {1,0}, {0,1},                     //cluster 2
-			   {200,100}, {202,100}, {201,101}     //cluster 3
+			   {50,40}, {52,40}, {51,41}     //cluster 3
 	};
 
     auto reach_dists = optics::compute_reachability_dists( points, 2, 10 );
@@ -585,7 +585,7 @@ void plot_tests() {
 }
 
 
-int main__()
+int main()
 {
 	tree_tests();
 	epsilon_estimation_tests();
