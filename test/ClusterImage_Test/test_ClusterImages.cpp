@@ -11,18 +11,18 @@
 
 
 
-inline std::vector<std::array<std::size_t, 2>> load_points_from_image( const std::string& file_path )
+inline std::vector<std::array<int, 2>> load_points_from_image( const std::string& file_path )
 {
 	const bgr_image img = imread( file_path );
 	assert( img.size().area() != 0 );
-	std::vector<std::array<std::size_t, 2>> result;
+	std::vector<std::array<int, 2>> result;
 	for ( std::size_t y = 0; y < img.size().height_; ++y )
 	{
 		for ( std::size_t x = 0; x < img.size().width_; ++x )
 		{
 			if ( img.pix( img_pos(x, y) ) != bgr_col(255,255,255) )
 			{
-				result.push_back( { x, y } );
+				result.push_back( { static_cast<int>(x), static_cast<int>(y) } );
 			}
 		}
 	}
@@ -30,7 +30,7 @@ inline std::vector<std::array<std::size_t, 2>> load_points_from_image( const std
 }
 
 
-int main()
+int main__()
 {
 	//std::string path = "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage_1.png";
 	std::string path = "./test/ClusterImage_Test/ClusterImage_1.ppm";

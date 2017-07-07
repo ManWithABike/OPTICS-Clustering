@@ -133,7 +133,7 @@ double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geo
 
 
 template<typename T, std::size_t N>
-std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const std::size_t min_pts, const RTree<T, N>& rtree ) {
+std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
 	static_assert( std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported" );
 	assert( epsilon > 0 );
 	//produce search box
@@ -278,6 +278,7 @@ double epsilon_estimation( const std::vector<std::array<T, dimension>>& points, 
 
 template<typename T, std::size_t dimension>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
+	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
 	static_assert(std::is_convertible<T,double>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
 	static_assert( dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
 	if ( points.empty() ) { return{}; }
@@ -332,7 +333,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 			processed[s.point_index] = true;
 			ordered_list.push_back( s.point_index );
 
-			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_idx], epsilon, rtree );
+			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], epsilon, rtree );
 			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
 			double s_core_dist = s_core_dist_m.unsafe_get_just();
@@ -355,6 +356,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 template<typename T, std::size_t dimension>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = 0.0 ) {
+	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
 	static_assert(std::is_convertible<double, T>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!");
 	static_assert(dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
 	if ( points.empty() ) { return{}; }
