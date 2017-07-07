@@ -86,7 +86,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	std::cout << std::endl << "Starting " << laps << " computations of  optics::compute_reachability_dist() ..." << std::endl;
 	sw::Stopwatch watch;
 	for ( std::size_t lap = 1; lap <= laps; lap++ ) {
-		if ( lap % (laps/10) == 0 ) std::cout << lap << "..";
+		if ( lap % (1+ laps/10) == 0 ) std::cout << lap << "..";
 		optics::compute_reachability_dists( points, min_pts, epsilon );
 		watch.lap();
 	}

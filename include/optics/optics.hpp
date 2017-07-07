@@ -1,3 +1,4 @@
+#define _SCL_SECURE_NO_WARNINGS
 // Copyright Ingo Proff 2016.
 // https://github.com/CrikeeIP/OPTICS-Clustering
 // Distributed under the MIT Software License (X11 license).
@@ -28,6 +29,11 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 
 #include <vector>
 #include <exception>
+
+//#define _CRT_NONSTDC_NO_WARNINGS
+//#define _CRT_SECURE_NO_WARNINGS
+
+#include <AxDat/OpenCV/OpenCV.h>
 
 
 
@@ -71,6 +77,9 @@ using Pt = typename bg::model::point<T, N, bg::cs::cartesian>;
 
 template<typename T, std::size_t N>
 using TreeValue = typename std::pair<Pt<T, N>, std::size_t>;
+
+template<typename T, std::size_t N>
+using TreeValue_Flann = typename std::pair<geom::Vec<T,N>, std::size_t>;
 
 template<typename T, std::size_t N>
 using Box = typename bg::model::box<Pt<T, N>>;
@@ -122,6 +131,27 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 	//Create an rtree from the cloud using packaging
 	RTree<T, N> rtree( cloud );
 	return rtree;
+}
+
+
+template<typename T, std::size_t N>
+cv::flann::GenericIndex<cv::flann::L2<float>> initialize_flann_index( const std::vector<geom::Vec<T, N>>& points ) {
+	//Insert all points with index into cloud
+	size_t idx_id = 0;
+	std::vector<std::array<float, N>> cloud;
+	cloud.reserve( points.size() );
+	for( const auto& point : points ){
+		std::array<float, N> result;
+		for ( std::size_t idx = 0; idx < N; idx++ ) {
+			result[idx] = static_cast<float>(point[idx]);
+		}
+		cloud.push_back(result);
+	};
+
+	//Create a flann index from the cloud
+	cvflann::AutotunedIndexParams params( 0.8f, 0.01f, 0.0f, 0.1f );
+	cv::flann::GenericIndex<cv::flann::L2<float>> index(cv::Mat(cloud), params, cv::flann::L2<float>());
+	return index;
 }
 
 template<typename T, std::size_t dimension>
@@ -297,6 +327,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 	//the rtree for fast nearest neighbour search
 	const auto rtree = internal::initialize_rtree( points );
 	
+	auto flann_index = internal::initialize_flann_index( points );
 	//Compute all neighbors
 	/*
 	std::vector<std::vector<std::size_t>> neighbors =
@@ -320,7 +351,18 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 		std::set<reachability_dist> seeds;
 
 		auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], epsilon, rtree );
-
+		std::vector<int> flann_neighbors;
+		std::vector<float> dists;
+		
+		std::vector<float> float_coords;
+		float_coords.reserve( dimension );
+		for ( std::size_t d = 0; d < dimension; d++ ) {
+			float_coords.push_back(static_cast<float>(points[point_idx][d]));
+		}
+		flann_index.radiusSearch( float_coords,
+								  flann_neighbors, dists, epsilon,
+								  cvflann::SearchParams() 
+		);
 		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, min_pts );
 		if ( !core_dist_m.is_just() ) { continue; }
 		double core_dist = core_dist_m.unsafe_get_just();
