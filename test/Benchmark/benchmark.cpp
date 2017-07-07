@@ -40,12 +40,22 @@ std::array<type, dimension> get_random_point( distribution& dis ) {
 
 
 //Returns the estimated space for each point given a perfect uniform distribution of n_points in dim dimensional volume space_volume
-double eps_guess(double space_volume, std::size_t n_points, std::size_t dim ) {
+void eps_guess( double space_volume, std::size_t n_points, std::size_t dim ) {
 	double d = static_cast<double> (dim);
+	const auto get_sphere_volume = [d]( double radius ) -> double {
+		double nom = std::pow( geom::pi, d / 2.0 ) * std::pow( radius, d );
+		double denom = std::tgamma( d / 2.0 + 1.0 );
+		double V = nom / denom;
+		return V;
+
+	};
 	double nominator = space_volume * 1.0 * std::tgamma( d / 2.0 + 1.0 );
-	double denominator = static_cast<double>(n_points) * std::sqrt( std::pow( geom::pi, d ) );
+	double denominator = static_cast<double>(n_points) * std::pow( geom::pi, d / 2.0 );
 	double r = std::pow( nominator / denominator, 1.0 / d );
-	return r;
+	std::cout << "Estimated distance between two points: " << r << std::endl;
+	double V = get_sphere_volume( r );
+	std::cout << "Estimated volume per point: " << V
+		<< " ->V=" << V*n_points << std::endl;
 }
 
 
@@ -55,11 +65,11 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 
 	//Space parameters
 	double edge_length = std::pow( static_cast<double>(space_volume), 1.0 / static_cast<double>(dimension) );
-	std::cout << "Space volume: " << std::pow(edge_length, static_cast<double>(dimension) ) << std::endl;
-	std::cout << "Space edge length: " << edge_length << std::endl;
-	double eps = eps_guess( static_cast<double>(space_volume), n_points, dimension );
-	std::cout << "Estimated space per point: " << eps << std::endl;
-	
+	std::cout << "Space volume: " << space_volume << std::endl;
+	std::cout << "Space edge length: " << edge_length
+		<< " ->V=" << std::pow( edge_length, static_cast<double>(dimension) ) << std::endl;
+	eps_guess( static_cast<double>(space_volume), n_points, dimension );
+
 	//Create a distribution that outputs coordinates between 0 and edge_length
 
 	//std::uniform_real_distribution<type> dis( 0, edge_length );
@@ -73,7 +83,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	}
 
 	//Let's go
-	std::cout << "Start " << laps << " computations of  optics::compute_reachability_dist()" << std::endl;
+	std::cout << std::endl << "Starting " << laps << " computations of  optics::compute_reachability_dist() ..." << std::endl;
 	sw::Stopwatch watch;
 	for ( std::size_t lap = 1; lap <= laps; lap++ ) {
 		if ( lap % (laps/10) == 0 ) std::cout << lap << "..";
@@ -93,8 +103,17 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 
 int main() {
 	std::cout << "OPTICS Benchmark" << std::endl;
-
-	test<100000, 2, 1000*1000, double, 10>( 10 );
+	
+	
+	std::cout << "--- 2 dim ---" << std::endl;
+	test<100000, 2, 100*100, double, 10>( 10 );
+	std::cout << std::endl << "--- 3 dim ---" << std::endl;
+	test<100000, 3, 100 * 100, double, 10>( 10 );
+	std::cout << std::endl << "--- 4 dim ---" << std::endl;
+	test<100000, 4, 100 * 100, double, 5>( 10 );
+	std::cout << std::endl << "--- 6 dim ---" << std::endl;
+	test<100000, 6, 100 * 100, double, 5>( 10 );
+	
 
 	return 0;
 }

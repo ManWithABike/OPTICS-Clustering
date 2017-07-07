@@ -76,7 +76,7 @@ template<typename T, std::size_t N>
 using Box = typename bg::model::box<Pt<T, N>>;
 
 template<typename T, std::size_t N>
-using RTree = typename bgi::rtree<TreeValue<T, N>, bgi::quadratic<25>>; //TODO: Number of elems per node configurable?
+using RTree = typename bgi::rtree<TreeValue<T, N>, bgi::rstar<16>>; //TODO: Number of elems per node configurable?
 
 
 
@@ -100,6 +100,7 @@ struct set_boost_point_coords<T, N, 0>
 		return 0;
 	}
 };
+
 
 template<typename T, std::size_t N>
 Pt<T, N> geom_to_boost_point( const geom::Vec<T, N>& point ) {
@@ -129,9 +130,12 @@ double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geo
 	return dist;
 }
 
+
+
 template<typename T, std::size_t N>
-std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
+std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const std::size_t min_pts, const RTree<T, N>& rtree ) {
 	static_assert( std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported" );
+	assert( epsilon > 0 );
 	//produce search box
 	geom::Vec<double, N> eps_vec( epsilon );
 	geom::Vec<double, N> corner1 = (point.as_doubles() - eps_vec);
@@ -142,6 +146,27 @@ std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, co
 	std::vector<TreeValue<T, N>> neighbors;
 	neighbors.reserve( 100 );
 	rtree.query( bgi::intersects( query_box ), std::back_inserter( neighbors ) );
+	//rtree.query( bgi::nearest( geom_to_boost_point(point), min_pts ), std::back_inserter( neighbors ) );
+	/*
+	//Custom intersects method
+	rtree.query(
+		bgi::satisfies( [&corner1, &corner2]( const TreeValue<T, N>& v ) {
+			Pt<T,N> pt = v.first;
+			return ( corner1[0] < pt.get<0>() &&
+					 corner1[1] < pt.get<1>() &&
+					 corner2[0] > pt.get<0>() &&
+					 corner2[1] > pt.get<1>()
+					);
+		}),
+		std::back_inserter( neighbors )
+	);
+
+	std::vector<TreeValue<T, N>> neighbors2;
+	neighbors2.reserve( 100 );
+	rtree.query( bgi::intersects( query_box ), std::back_inserter( neighbors2 ) );
+	assert( neighbors == neighbors2 ); //TODO: DEBUG raus
+	neighbors = neighbors2;
+	*/
 
 	//keep those with euclidean dist < epsilon
 	std::vector<std::size_t> neighbor_indices;
@@ -167,13 +192,6 @@ fplus::maybe<double> compute_core_dist( const geom::Vec<T, N>& point, const std:
 
 	if ( neighbor_indices.size() < min_pts ) { return{}; }
 
-	//sort neighbors by distance
-	/*auto neighbors = fplus::sort_on( [&points, &point]( const std::size_t& idx ) -> double {
-		return geom::square_dist( point, points[idx] );
-	}, neighbor_indices );
-
-	double core_dist = geom::dist( point, points[neighbors[min_pts - 1]] );
-	*/
 	auto core_elem_idx = fplus::nth_element_on( [&points, &point]( const std::size_t& idx ) -> double {
 		return geom::square_dist( point, points[idx] );
 	}, min_pts-1, neighbor_indices );
@@ -230,9 +248,14 @@ double epsilon_estimation( const std::vector<geom::Vec<T, dimension>>& points, c
 	double d = static_cast<double> (dimension);
 	auto  space = geom::bounding_box( points );
 	double space_volume = static_cast<double>(geom::product( geom::abs(space.first - space.second) ));
-	double nominator = space_volume * static_cast<double>(min_pts) * std::tgamma( d/2.0 + 1.0 );
-	double denominator = static_cast<double>(points.size()) * std::sqrt( std::pow( geom::pi, d ) );
-	double r = std::pow( nominator / denominator, 1.0 / d );
+	
+	double space_per_minpts_points = (space_volume / static_cast<double>(points.size())) * static_cast<double>(min_pts);
+	double n_dim_unit_ball_vol = std::sqrt( std::pow( geom::pi, d ) ) / std::tgamma( d / 2.0 + 1.0 );
+	double r = std::pow( space_per_minpts_points / n_dim_unit_ball_vol, 1.0/d );
+	
+	//double nominator = space_volume * static_cast<double>(min_pts) * std::tgamma( d/2.0 + 1.0 );
+	//double denominator = static_cast<double>(points.size()) * std::sqrt( std::pow( geom::pi, d ) );
+	//double r = std::pow( nominator / denominator, 1.0 / d );
 	return r;
 }
 
@@ -272,6 +295,22 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 
 	//the rtree for fast nearest neighbour search
 	const auto rtree = internal::initialize_rtree( points );
+	
+	//Compute all neighbors
+	/*
+	std::vector<std::vector<std::size_t>> neighbors =
+		fplus::transform_parallelly_n_threads(
+			4,
+			[&rtree, epsilon, min_pts]( const geom::Vec<T, dimension>& point ) -> std::vector<std::size_t> 
+				{ return internal::find_neighbor_indices( point, epsilon, min_pts, rtree ); },
+			points
+		);
+		*/
+	/*neighbors.reserve( points.size() );
+	for ( const auto&p : points ) {
+		neighbors.push_back( internal::find_neighbor_indices( p, 0, epsilon, min_pts, rtree, {} ) );
+	}
+	*/
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {
 		if ( processed[point_idx] == true ) continue;
@@ -293,8 +332,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 			processed[s.point_index] = true;
 			ordered_list.push_back( s.point_index );
 
-			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], epsilon, rtree );
-
+			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_idx], epsilon, rtree );
 			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
 			double s_core_dist = s_core_dist_m.unsafe_get_just();
@@ -303,7 +341,6 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 		}
 
 	}
-
 	//sanity checks
 	assert( ordered_list.size() == points.size() );
 	assert( fplus::all_unique( ordered_list ) );
