@@ -22,6 +22,7 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 
 #include "bgr_image.hpp"
 #include "tree.hpp"
+#include "nanoflann.hpp"
 
 #include <geometry/geometry.hpp>
 #include <fplus/fplus.hpp>
@@ -276,6 +277,114 @@ double epsilon_estimation( const std::vector<std::array<T, dimension>>& points, 
 }
 
 
+template <typename T, std::size_t N>
+class radius_search
+{
+public:
+	using point_t = std::array<T, N>;
+	using points_t = std::vector<point_t>;
+	using idx_t = std::size_t;
+	using idxs_t = std::vector<idx_t>;
+	radius_search( const points_t& points )
+		: data_( init( points ) ) {}
+	idxs_t query( T eps, const point_t& point )
+	{
+		std::vector<std::size_t> counts( data_[0].size(), 0);
+		for ( std::size_t d = 0; d < N; ++d )
+		{
+			const auto it_lower = std::lower_bound( std::begin( data_[d] ),
+													std::end( data_[d] ),
+													std::make_pair( point[d] - eps, std::size_t( 0 ) ) );
+			const auto it_upper = std::upper_bound( it_lower,
+													std::end( data_[d] ),
+													std::make_pair( point[d] + eps, std::size_t( std::numeric_limits<T>::max() ) ) );
+			for ( auto it = it_lower; it < it_upper; ++it )
+			{
+				++counts[it->second];
+			}
+		}
+		std::vector<idx_t> result;
+		result.reserve( 100 );
+		for ( std::size_t i = 0; i < counts.size(); ++i )
+		{
+			if ( counts[i] == N )
+			{
+				result.push_back( i );
+			}
+		}
+		return result;
+	}
+
+private:
+	using val_with_idx = std::pair<T, idx_t>;
+	using val_with_idxs = std::vector<val_with_idx>;
+	using val_with_idxss = std::array<val_with_idxs, N>;
+	val_with_idxss init( const points_t& points )
+	{
+		val_with_idxss data;
+		for ( std::size_t d = 0; d < N; ++d )
+		{
+			data[d] = fplus::sort_on( fplus::fst<T,idx_t>, fplus::transform_with_idx( [d]( std::size_t idx, const point_t& p ) -> val_with_idx
+			{
+				return { p[d], idx };
+			}, points ) );
+		}
+		return data;
+	}
+	val_with_idxss data_;
+};
+
+
+template<typename T, std::size_t dimension>
+std::vector<std::vector<std::size_t>> get_neighbors( const std::vector<geom::Vec<T, dimension>>& points, double epsilon ) {
+	radius_search<T, dimension> index ( fplus::transform( geom::get_coords<T,dimension>, points ) );
+	std::vector<std::vector<std::size_t>> result;
+	result.reserve( points.size() );
+	for ( const auto& p : points ) {
+		auto neighbors = index.query( epsilon, p.coords() );
+		result.push_back( neighbors );
+	}
+	return result;
+}
+
+
+/*
+template<typename T, std::size_t dimension>
+std::vector<std::vector<std::size_t>> get_nanoflann_neighbors( const std::vector<geom::Vec<T, dimension>>& points, double epsilon ) {
+	// construct a kd-tree index:
+	PointCloud<num_t> cloud;
+	typedef nanoflann::KDTreeSingleIndexAdaptor<
+		nanoflann::L2_Simple_Adaptor<T, PointCloud<T> >,
+		PointCloud<T>,
+		dimension // dim 
+	> my_kd_tree_t;
+	
+	my_kd_tree_t index( dimension, cloud, KDTreeSingleIndexAdaptorParams( 10 ) ); //10 = max leaves
+	index.buildIndex();
+
+	for ( const auto& p : points ) {
+		const double query_pt[dimension] = p[0];
+		// ----------------------------------------------------------------
+		// radiusSearch():  Perform a search for the N closest points
+		// ----------------------------------------------------------------
+		const double search_radius = epsilon;
+		std::vector<std::pair<std::size_t, T> > ret_matches;
+
+		nanoflann::SearchParams params;
+		//params.sorted = false;
+
+		const size_t nMatches = index.radiusSearch( &query_pt[0], search_radius, ret_matches, params );
+
+		cout << "radiusSearch(): radius=" << search_radius << " -> " << nMatches << " matches\n";
+		for ( size_t i = 0; i < nMatches; i++ )
+			cout << "idx[" << i << "]=" << ret_matches[i].first << " dist[" << i << "]=" << ret_matches[i].second << endl;
+		cout << "\n";
+		
+	}
+}
+*/
+
+
 template<typename T, std::size_t dimension>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
 	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
@@ -295,21 +404,27 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 	//std::vector<double> core_dist( points.size(), -1.0f );
 
 	//the rtree for fast nearest neighbour search
-	const auto rtree = internal::initialize_rtree( points );
+	//const auto rtree = internal::initialize_rtree( points );
 	
-	//Compute all neighbors
-	/*
-	std::vector<std::vector<std::size_t>> neighbors =
+	
+	std::vector<std::vector<std::size_t>> neighbors = get_neighbors<T, dimension>( points, epsilon );
+	//std::vector<std::vector<std::size_t>> neighbors = get_nanoflann_neighbors<T, dimension>( points, epsilon );
+	//Compute all neighbors parallely beforehand
+	/*std::vector<std::vector<std::size_t>> neighbors =
 		fplus::transform_parallelly_n_threads(
-			4,
+			1,
 			[&rtree, epsilon, min_pts]( const geom::Vec<T, dimension>& point ) -> std::vector<std::size_t> 
-				{ return internal::find_neighbor_indices( point, epsilon, min_pts, rtree ); },
+				{ return internal::find_neighbor_indices( point, epsilon, rtree ); },
 			points
 		);
-		*/
-	/*neighbors.reserve( points.size() );
+	*/
+	
+	//Compute all neighbors sequentially
+	/*
+	std::vector<std::vector<std::size_t>> neighbors_rtree;
+	neighbors_rtree.reserve( points.size() );
 	for ( const auto&p : points ) {
-		neighbors.push_back( internal::find_neighbor_indices( p, 0, epsilon, min_pts, rtree, {} ) );
+		neighbors_rtree.push_back( internal::find_neighbor_indices( p, epsilon, rtree ) );
 	}
 	*/
 
@@ -319,7 +434,8 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 		ordered_list.push_back( point_idx );
 		std::set<reachability_dist> seeds;
 
-		auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], epsilon, rtree );
+		//auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], epsilon, rtree );
+		auto neighbor_indices = neighbors[point_idx];
 
 		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, min_pts );
 		if ( !core_dist_m.is_just() ) { continue; }
@@ -333,7 +449,9 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 			processed[s.point_index] = true;
 			ordered_list.push_back( s.point_index );
 
-			auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], epsilon, rtree );
+			//auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], epsilon, rtree );
+			auto s_neighbor_indices = neighbors[s.point_index];
+
 			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
 			double s_core_dist = s_core_dist_m.unsafe_get_just();
