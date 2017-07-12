@@ -1,0 +1,15 @@
+Benchmark
+
+test<100000, d, 100*100, double, 10>( 10 );
+
+	quadratic 25	quadratic 16	rstar 16
+d=2 	224				220				219
+d=3 	367				348				346
+d=4 	600				539				539
+d=6		1860			1701			1689
+
+rstar 16 < rstar 8
+quadratic 8 = quadratic 16
+bgi::rstar<25,7,7,7> = quadratic 10
+bgi::rstar<25> = quadratic 10
+bgi::rstar<10> = quadratic 10
