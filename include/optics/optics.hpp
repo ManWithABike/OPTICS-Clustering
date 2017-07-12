@@ -74,9 +74,6 @@ template<typename T, std::size_t N>
 using TreeValue = typename std::pair<Pt<T, N>, std::size_t>;
 
 template<typename T, std::size_t N>
-using TreeValue_Flann = typename std::pair<geom::Vec<T,N>, std::size_t>;
-
-template<typename T, std::size_t N>
 using Box = typename bg::model::box<Pt<T, N>>;
 
 template<typename T, std::size_t N>
@@ -128,26 +125,6 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 	return rtree;
 }
 
-
-template<typename T, std::size_t N>
-cv::flann::GenericIndex<cv::flann::L2<float>> initialize_flann_index( const std::vector<geom::Vec<T, N>>& points ) {
-	//Insert all points with index into cloud
-	size_t idx_id = 0;
-	std::vector<std::array<float, N>> cloud;
-	cloud.reserve( points.size() );
-	for( const auto& point : points ){
-		std::array<float, N> result;
-		for ( std::size_t idx = 0; idx < N; idx++ ) {
-			result[idx] = static_cast<float>(point[idx]);
-		}
-		cloud.push_back(result);
-	};
-
-	//Create a flann index from the cloud
-	cvflann::AutotunedIndexParams params( 0.8f, 0.01f, 0.0f, 0.1f );
-	cv::flann::GenericIndex<cv::flann::L2<float>> index(cv::Mat(cloud), params, cv::flann::L2<float>());
-	return index;
-}
 
 template<typename T, std::size_t dimension>
 double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) { //TODO: Speed this up by writing a recursive template for square_dist(boost_pt, geom_pt) like geom::compute_pythagoras
