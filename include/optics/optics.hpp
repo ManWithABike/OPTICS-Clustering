@@ -31,12 +31,6 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 #include <vector>
 #include <exception>
 
-//#define _CRT_NONSTDC_NO_WARNINGS
-//#define _CRT_SECURE_NO_WARNINGS
-
-#include <AxDat/OpenCV/OpenCV.h>
-
-
 
 
 namespace optics {
