@@ -285,11 +285,19 @@ public:
 	using points_t = std::vector<point_t>;
 	using idx_t = std::size_t;
 	using idxs_t = std::vector<idx_t>;
+
 	radius_search( const points_t& points )
 		: data_( init( points ) ) {}
+
 	idxs_t query( T eps, const point_t& point )
 	{
-		std::vector<std::size_t> counts( data_[0].size(), 0);
+		//std::vector<std::size_t> counts( data_[0].size(), 0);
+		assert( data_[0].size() == 100000 );
+		std::array<std::size_t, 100000> counts;
+
+		std::array<idx_t, 100> result;
+		std::size_t neighbor_count( 0 );
+
 		for ( std::size_t d = 0; d < N; ++d )
 		{
 			const auto it_lower = std::lower_bound( std::begin( data_[d] ),
@@ -301,18 +309,20 @@ public:
 			for ( auto it = it_lower; it < it_upper; ++it )
 			{
 				++counts[it->second];
+				if ( d==N && counts[it->second] == N ){
+					if ( neighbor_count >= result.size() ) {
+						break;
+					}
+					result[neighbor_count] = it->second;
+					neighbor_count++;
+					
+				}
 			}
 		}
-		std::vector<idx_t> result;
-		result.reserve( 100 );
-		for ( std::size_t i = 0; i < counts.size(); ++i )
-		{
-			if ( counts[i] == N )
-			{
-				result.push_back( i );
-			}
-		}
-		return result;
+		
+		
+		auto result_vec = std::vector<idx_t>( std::begin( result ), std::begin( result ) + neighbor_count );
+		return result_vec;
 	}
 
 private:
