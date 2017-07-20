@@ -2,11 +2,12 @@ Benchmark
 
 test<100000, d, 100*100, double, 10>( 10 );
 
-	quadratic 25	quadratic 16	rstar 16
-d=2 	224				220				219
-d=3 	367				348				346
-d=4 	600				539				539
-d=6		1860			1701			1689
+	quadratic 25	quadratic 16	rstar 16	1thread	2threads 3threads 4threads 
+	
+d=2 	224				220				219		262		298		  296		294	
+d=3 	367				348				346		400		368		  344		345	
+d=4 	600				539				539		585		469		  402		378	
+d=6		1860			1701			1689	1840	1092	  807		677	
 
 rstar 16 < rstar 8
 quadratic 8 = quadratic 16

@@ -59,7 +59,7 @@ void eps_guess( double space_volume, std::size_t n_points, std::size_t dim ) {
 }
 
 
-template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type, std::size_t laps>
+template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type, std::size_t laps, std::size_t n_threads = 1>
 std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	static_assert(dimension > 0, "Dimension must be >0");
 
@@ -87,7 +87,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	sw::Stopwatch watch;
 	for ( std::size_t lap = 1; lap <= laps; lap++ ) {
 		if ( laps < 10 || (lap % (laps/10) == 0) ) std::cout << lap << "..";
-		optics::compute_reachability_dists( points, min_pts, epsilon );
+		optics::compute_reachability_dists<type ,dimension, n_threads>( points, min_pts, epsilon );
 		watch.lap();
 	}
 
@@ -104,18 +104,18 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 int main() {
 	std::cout << "OPTICS Benchmark" << std::endl;
 	
-	test<100000, 2, 100 * 100, double, 10>( 10 );
+	//test<100000, 2, 100 * 100, double, 10>( 10 );
 	
-	/*
+	
 	std::cout << "--- 2 dim ---" << std::endl;
-	test<100000, 2, 100*100, double, 10>( 10 );
+	test<100000, 2, 100*100, double, 10, 8>( 10 );
 	std::cout << std::endl << "--- 3 dim ---" << std::endl;
-	test<100000, 3, 100 * 100, double, 10>( 10 );
+	test<100000, 3, 100*100, double, 10, 8>( 10 );
 	std::cout << std::endl << "--- 4 dim ---" << std::endl;
-	test<100000, 4, 100 * 100, double, 5>( 10 );
+	test<100000, 4, 100*100, double,  5, 8>( 10 );
 	std::cout << std::endl << "--- 6 dim ---" << std::endl;
-	test<100000, 6, 100 * 100, double, 5>( 10 );
-	*/
+	test<100000, 6, 100*100, double,  5, 8>( 10 );
+	
 
 	return 0;
 }
