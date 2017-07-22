@@ -108,13 +108,13 @@ int main() {
 	
 	
 	std::cout << "--- 2 dim ---" << std::endl;
-	test<100000, 2, 100*100, double, 10, 8>( 10 );
+	test<100000, 2, 100*100, double, 10, 1>( 10 );
 	std::cout << std::endl << "--- 3 dim ---" << std::endl;
-	test<100000, 3, 100*100, double, 10, 8>( 10 );
+	test<100000, 3, 100*100, double, 10, 1>( 10 );
 	std::cout << std::endl << "--- 4 dim ---" << std::endl;
-	test<100000, 4, 100*100, double,  5, 8>( 10 );
+	test<100000, 4, 100*100, double,  5, 1>( 10 );
 	std::cout << std::endl << "--- 6 dim ---" << std::endl;
-	test<100000, 6, 100*100, double,  5, 8>( 10 );
+	test<100000, 6, 100*100, double,  5, 1>( 10 );
 	
 
 	return 0;

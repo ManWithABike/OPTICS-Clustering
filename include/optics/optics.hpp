@@ -430,9 +430,9 @@ inline bgr_image draw_reachability_plot( const std::vector<reachability_dist>& r
 	//Drawing the graph
 	for ( int i = 0; i < static_cast<int>(reach_dists.size())-1; i++ ) {
         int x1 = fplus::round( (image.size().width_-1) * i/ static_cast<double>((reach_dists_values.size()-1)) );
-        int y1 = image.size().height_ -1 - (reach_dists_values[i] < 0 ? no_dist : fplus::round( reach_dists_values[i]));
-        int x2 = fplus::round( (image.size().width_-1) * (i+1)/static_cast<double>((reach_dists_values.size()-1)) );
-        int y2 = image.size().height_ -1 - (reach_dists_values[i+1] < 0 ? no_dist : fplus::round( reach_dists_values[i+1]));
+        int y1 = static_cast<int>(image.size().height_) -1 - (reach_dists_values[i] < 0 ? no_dist : fplus::round( reach_dists_values[i]));
+        int x2 = fplus::round( (static_cast<double>(image.size().width_)-1) * (i+1)/static_cast<double>((reach_dists_values.size()-1)) );
+        int y2 = static_cast<int>(image.size().height_) -1 - (reach_dists_values[i+1] < 0 ? no_dist : fplus::round( reach_dists_values[i+1]));
 		plot_line_segment( image, img_pos(x1, y1), img_pos(x2, y2), bgr_col(30,30,30) );
 		bgr_col col = reach_dists_values[i] < 0 ? bgr_col(0, 0, 255) : bgr_col(0, 255, 0);
 		plot_pixel( image, img_pos( x1, y1 ), col );
@@ -443,7 +443,7 @@ inline bgr_image draw_reachability_plot( const std::vector<reachability_dist>& r
 	//Fill area under the graph
 	bgr_col fill_col( 177, 177, 177 );
 	for ( std::size_t x = 0; x < image.size().width_; x++ ) {
-		int y = image.size().height_-1;
+		int y = static_cast<int>(image.size().height_)-1;
 		while ( y >= 0 && image.pix( img_pos( x, y ) ) == bgr_col( 255, 255, 255 ) ) {
 			image.pix( img_pos( x, y ) ) = fill_col;
 			y--;

@@ -207,8 +207,8 @@ namespace internal {
 		std::vector<img_pos> result;
 		result.reserve( static_cast<int>(dist) + 2 );
 
-		int x1 = p1.x_; int y1 = p1.y_;
-		int x2 = p2.x_; int y2 = p2.y_;
+		int x1 = static_cast<int>(p1.x_); int y1 = static_cast<int>(p1.y_);
+		int x2 = static_cast<int>(p2.x_); int y2 = static_cast<int>(p2.y_);
 
 		int delta_x( x2 - x1 );
 		// if x1 == x2, then it does not matter what we set here
@@ -321,8 +321,8 @@ inline void plot_circle( bgr_image& image, const img_pos& center, std::size_t ra
 	}
     int x = static_cast<int>(radius);
     int y = 0;
-    int x0 = center.x_;
-    int y0 = center.y_;
+    int x0 = static_cast<int>(center.x_);
+    int y0 = static_cast<int>(center.y_);
     int err = 0;
 
     while (x >= y)
