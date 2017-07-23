@@ -24,6 +24,7 @@ static_assert(_HAS_AUTO_PTR_ETC, "_HAS_AUTO_PTR_ETC has to be 1 for boost includ
 #include "bgr_image.hpp"
 #include "tree.hpp"
 #include "nanoflann.hpp"
+#include "kdTree.hpp"
 
 #include <geometry/geometry.hpp>
 #include <fplus/fplus.hpp>

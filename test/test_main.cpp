@@ -585,9 +585,35 @@ void plot_tests() {
 }
 
 
+void kdtree_tests() {
+	typedef double T;
+	constexpr std::size_t dim = 1;
+	constexpr std::size_t n_pts = 8;
+	constexpr std::size_t max_pts = 2;
+
+	typedef std::array<T, dim> pt_t;
+	typedef std::array<pt_t, n_pts> pointcloud_t;
+	
+	pointcloud_t points = std::array<pt_t, n_pts>(
+	{
+		std::array<double,1>({-4.0}), std::array<double,1>({-3.0}), std::array<double,1>({ -2.0 }), std::array<double,1>({ -1.0 }),
+		std::array<double,1>({ 1.0 }), std::array<double,1>({ 2.0 }), std::array<double,1>({ 3.0 }), std::array<double,1>({ 4.0 })
+	});
+
+	kdt::KDTree<T, dim, n_pts, max_pts> kd_tree(points);
+
+	auto neighbors = kd_tree.radius_search({ -4 }, 1.0);
+	std::vector<std::array<pt_t, max_pts>> exp_neighbors({ { -4 },{ -3 } });
+	assert(neighbors == exp_neighbors );
+
+	std::cout << "KDTree tests successful!" << std::endl;
+}
+
+
 int main()
 {
 	tree_tests();
+	kdtree_tests();
 	epsilon_estimation_tests();
 	chi_cluster_tests();
 	chi_cluster_tree_tests();
