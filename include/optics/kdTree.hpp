@@ -20,7 +20,33 @@ constexpr bool is_powerof2(std::size_t v) {
 }
 
 
+template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
+class KDTreeLeaf;
+
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim = 0 >
+class KDTree;
+
+
+template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
+std::enable_if_t<
+	(n_points <= max_points_per_node),
+	std::unique_ptr<KDTree<CoordsType, dimension, n_points, max_points_per_node, (split_dim + 1) % dimension>>
+>
+make_child( const std::array<std::array<CoordsType, dimension>, n_points>& points_ ) {
+	return std::make_unique<KDTreeLeaf<CoordsType, dimension, n_points, max_points_per_node, (split_dim + 1) % dimension>>( points_ );
+}
+
+template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
+std::enable_if_t<
+	(n_points > max_points_per_node),
+	std::unique_ptr<KDTree<CoordsType, dimension, n_points, max_points_per_node, (split_dim + 1) % dimension>>
+>
+make_child( const std::array<std::array<CoordsType, dimension>, n_points>& points_ ) {
+	return std::make_unique<KDTree<CoordsType, dimension, n_points, max_points_per_node, (split_dim + 1) % dimension>>( points_ );
+}
+
+
+template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
 class KDTree {
 	//static_assert(is_powerof2(n_points), "The total number of points stored in a KDTree 'n_points' has to be a power of two.");
 	//static_assert(is_powerof2(max_pts_per_node), "");
@@ -60,15 +86,10 @@ public:
 				right_points[r_idx++] = p;
 			}
 		}
-		if (n_points/2 <= max_points_per_node) {
-			left = std::make_unique<KDTreeLeaf<CoordsType, dimension, n_points / 2, n_points / 2, (split_dim + 1) % dimension>>(left_points);
-			right = std::make_unique<KDTreeLeaf<CoordsType, dimension, n_points - n_points / 2, n_points - n_points / 2, (split_dim + 1) % dimension>>( right_points );
-		}
-		else {
-			left = std::make_unique<KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>>(left_points);
-			right = std::make_unique<KDTree<CoordsType, dimension, n_points - n_points / 2, max_points_per_node, (split_dim + 1) % dimension>> (right_points);
 		
-		}
+		left = make_child<CoordsType, dimension, n_points/2, max_points_per_node, split_dim>( left_points );
+		right = make_child<CoordsType, dimension, n_points/2, max_points_per_node, split_dim>( right_points );
+	
 	}
 
 	virtual std::vector<std::array<point_type, max_points_per_node>> radius_search (const point_type& p, double radius) {
@@ -86,9 +107,12 @@ public:
 
 private:
 	double split;
-	std::unique_ptr<KDTreeLeaf<CoordsType, dimension, n_points/2, max_points_per_node, (split_dim + 1) % dimension>> left;
-	std::unique_ptr<KDTreeLeaf<CoordsType, dimension, n_points - (n_points / 2), max_points_per_node, (split_dim + 1) % dimension>> right;
+	std::unique_ptr<KDTree<CoordsType, dimension, n_points/2, max_points_per_node, (split_dim + 1) % dimension>> left;
+	std::unique_ptr<KDTree<CoordsType, dimension, n_points/2, max_points_per_node, (split_dim + 1) % dimension>> right;
 };
+
+
+
 
 
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim >
