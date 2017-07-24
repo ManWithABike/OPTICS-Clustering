@@ -314,6 +314,9 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 			points
 		);
 	
+	//KDTree
+	const kdt::KDTree kdtree ( points );
+
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {
 		if ( processed[point_idx] == true ) continue;

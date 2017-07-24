@@ -586,25 +586,185 @@ void plot_tests() {
 
 
 void kdtree_tests() {
-	typedef double T;
-	constexpr std::size_t dim = 1;
-	constexpr std::size_t n_pts = 8;
-	constexpr std::size_t max_pts = 2;
-
-	typedef std::array<T, dim> pt_t;
-	typedef std::array<pt_t, n_pts> pointcloud_t;
-	
-	pointcloud_t points = std::array<pt_t, n_pts>(
 	{
-		std::array<double,1>({-4.0}), std::array<double,1>({-3.0}), std::array<double,1>({ -2.0 }), std::array<double,1>({ -1.0 }),
-		std::array<double,1>({ 1.0 }), std::array<double,1>({ 2.0 }), std::array<double,1>({ 3.0 }), std::array<double,1>({ 4.0 })
-	});
+		typedef double T;
+		constexpr std::size_t dim = 1;
+		constexpr std::size_t n_pts = 8;
+		constexpr std::size_t max_pts = 2;
 
-	kdt::KDTree<T, dim, n_pts, max_pts> kd_tree(points);
+		typedef std::array<T, dim> pt_t;
+		typedef std::array<pt_t, n_pts> pointcloud_t;
 
-	auto neighbors = kd_tree.radius_search({ -4 }, 1.0);
-	std::vector<std::array<pt_t, max_pts>> exp_neighbors({ { -4 },{ -3 } });
-	assert(neighbors == exp_neighbors );
+		pointcloud_t points =
+		{ {
+			{{-4.0}}, {{-3.0}}, {{ -2.0 }}, {{ -1.0 }},
+			{{ 1.0 }}, {{ 2.0 }}, {{ 3.0 }}, {{ 4.0 }}
+		} }; //Two curly braces per array. Because. https://stackoverflow.com/questions/8192185/using-stdarray-with-initialization-lists
+
+		kdt::KDTree<T, dim, n_pts, max_pts> kd_tree( points );
+
+		auto neighbors = kd_tree.radius_search( { -4 }, 1.01 );
+		std::vector<std::array<pt_t, max_pts>> exp_neighbors( { { -4, -3 } } );
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { -3 }, 1.01 );
+		exp_neighbors = {
+			{{ -4, -3 }}, 
+			{{ -1, -2} }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { -2 }, 1.01 );
+		exp_neighbors = {
+			{ { -4, -3 } },
+			{ { -1, -2 } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { -1 }, 1.01 );
+		exp_neighbors = {
+			{ { -4, -3 } },
+			{ { -1, -2 } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 1 }, 1.01 );
+		exp_neighbors = {
+			{ { -1, -2 } },
+			{ { 2, 1 } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 2 }, 1.01 );
+		exp_neighbors = {
+			{ { -1, -2 } },
+			{ { 2, 1 } },
+			{ { 4, 3 } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 3 }, 1.01 );
+		exp_neighbors = {
+			{ { 2, 1 } },
+			{ { 4, 3 } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 4 }, 1.01 );
+		exp_neighbors = {
+			{ { 2, 1 } },
+			{ { 4, 3 } }
+		};
+		assert( neighbors == exp_neighbors );
+	}
+
+	{
+		typedef double T;
+		constexpr std::size_t dim = 1;
+		constexpr std::size_t n_pts = 4;
+		constexpr std::size_t max_pts = 2;
+
+		typedef std::array<T, dim> pt_t;
+		typedef std::array<pt_t, n_pts> pointcloud_t;
+
+		pointcloud_t points =
+		{ {
+			{ { -1 } },{ { 0 } },{ { 0 } },{ { 0 } }
+			} }; //Two curly braces per array. Because. https://stackoverflow.com/questions/8192185/using-stdarray-with-initialization-lists
+
+		kdt::KDTree<T, dim, n_pts, max_pts> kd_tree( points );
+
+		auto neighbors = kd_tree.radius_search( { 0 }, 1.01 );
+		std::vector<std::array<pt_t, max_pts>> exp_neighbors
+		{
+			{ { -1, 0 } },
+			{ { 0, 0} }
+		};
+		assert( neighbors == exp_neighbors );
+	}
+
+	{
+		typedef double T;
+		constexpr std::size_t dim = 2;
+		constexpr std::size_t n_pts = 8;
+		constexpr std::size_t max_pts = 2;
+
+		typedef std::array<T, dim> pt_t;
+		typedef std::array<pt_t, n_pts> pointcloud_t;
+
+		pointcloud_t points =
+		{ {
+			{ { 0, 10 } }, { { 0, 9 } },{ { 0,8 } },
+			{ { 2, 6 } }, { { 2, 5 }},{ { 2, 4 } },
+			{ { 4, 2 } },{ { 4, 1 } }
+			} }; //Two curly braces per array. Because. https://stackoverflow.com/questions/8192185/using-stdarray-with-initialization-lists
+
+		kdt::KDTree<T, dim, n_pts, max_pts> kd_tree( points );
+
+		auto neighbors = kd_tree.radius_search( { 0, 10 }, 1.01 );
+		std::vector<std::array<pt_t, max_pts>> exp_neighbors
+		{
+			{{ {{ 0, 8 }}, {{2, 6}} }},
+			{{ {{ 0, 10 }}, {{0,9}}  } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 0, 9 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 0, 8 } },{ { 2, 6 } } } },
+			{ { { { 0, 10 } },{ { 0,9 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 0, 8 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 0, 8 } },{ { 2, 6 } } } },
+			{ { { { 0, 10 } },{ { 0,9 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 2, 6 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 0, 8 } },{ { 2, 6 } } } },
+			{ { { { 2, 5 } },{ { 2, 4 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 2, 5 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 0, 8 } },{ { 2, 6 } } } },
+			{ { { { 4, 2 } },{ { 4, 1 } } } },
+			{ { { { 2, 5 } },{ { 2, 4 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 2, 4 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 0, 8 } },{ { 2, 6 } } } },
+			{ { { { 4, 2 } },{ { 4, 1 } } } },
+			{ { { { 2, 5 } },{ { 2, 4 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 4, 2 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 4, 2 } },{ { 4, 1 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+
+		neighbors = kd_tree.radius_search( { 4, 1 }, 1.01 );
+		exp_neighbors =
+		{
+			{ { { { 4, 2 } },{ { 4, 1 } } } }
+		};
+		assert( neighbors == exp_neighbors );
+	}
 
 	std::cout << "KDTree tests successful!" << std::endl;
 }

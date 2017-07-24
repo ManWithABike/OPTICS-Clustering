@@ -20,13 +20,27 @@ constexpr bool is_powerof2(std::size_t v) {
 }
 
 
-template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
-class KDTreeLeaf;
-
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim = 0 >
 class KDTree;
 
 
+template<typename CoordsType, std::size_t dimension, std::size_t n_points >
+class KDTreeLeaf {
+public:
+	typedef std::array<CoordsType, dimension> point_type;
+	KDTreeLeaf() {}
+	KDTreeLeaf( const std::array<point_type, n_points>& points_ ) : points( points_ ) {}
+
+	std::vector<std::array<point_type, n_points>> radius_search( const point_type& p, double radius ){
+		return std::vector<std::array<point_type, n_points>>( { points } );
+	}
+
+private:
+	std::array<point_type, n_points> points;
+};
+
+
+/*
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
 std::enable_if_t<
 	(n_points <= max_points_per_node),
@@ -44,11 +58,11 @@ std::enable_if_t<
 make_child( const std::array<std::array<CoordsType, dimension>, n_points>& points_ ) {
 	return std::make_unique<KDTree<CoordsType, dimension, n_points, max_points_per_node, (split_dim + 1) % dimension>>( points_ );
 }
-
+*/
 
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
 class KDTree {
-	//static_assert(is_powerof2(n_points), "The total number of points stored in a KDTree 'n_points' has to be a power of two.");
+	static_assert(is_powerof2(n_points), "The total number of points stored in a KDTree 'n_points' has to be a power of two.");
 	//static_assert(is_powerof2(max_pts_per_node), "");
 
 public:
@@ -78,8 +92,23 @@ public:
 		std::array<point_type, n_points - n_points / 2> right_points;
 		std::size_t l_idx(0);
 		std::size_t r_idx(0);
+		std::vector<point_type> on_split_points;
+		on_split_points.reserve( 2 );
 		for (const auto& p : points_) {
-			if (p[split_dim] < split) {
+			if (l_idx < left_points.size() && p[split_dim] < split) {
+				left_points[l_idx++] = p;
+			}
+			else if ( p[split_dim] > split ){
+				right_points[r_idx++] = p;
+			}
+			else{
+				on_split_points.push_back( p );
+			}
+		}
+		assert( left_points.size() + right_points.size() == l_idx + r_idx + on_split_points.size() );
+
+		for ( const auto& p : on_split_points ) {
+			if ( l_idx < left_points.size() ) {
 				left_points[l_idx++] = p;
 			}
 			else {
@@ -87,45 +116,45 @@ public:
 			}
 		}
 		
-		left = make_child<CoordsType, dimension, n_points/2, max_points_per_node, split_dim>( left_points );
-		right = make_child<CoordsType, dimension, n_points/2, max_points_per_node, split_dim>( right_points );
+		left = decltype(left)( left_points );
+		right = decltype(right)( right_points );
 	
 	}
 
-	virtual std::vector<std::array<point_type, max_points_per_node>> radius_search (const point_type& p, double radius) {
+	std::vector<std::array<point_type, max_points_per_node>> radius_search (const point_type& p, double radius) {
 		if (p[split_dim] + radius < split) {
-			return left->radius_search(p, radius);
+			return left.radius_search(p, radius);
 		}
 		else if (p[split_dim] - radius >= split) {
-			return right->radius_search(p, radius);
+			return right.radius_search(p, radius);
 		}
 		else {
-			return fplus::append(left->radius_search(p, radius), right->radius_search(p, radius));
+			return fplus::append(left.radius_search(p, radius), right.radius_search(p, radius));
 		}
 	}
 
 
 private:
 	double split;
-	std::unique_ptr<KDTree<CoordsType, dimension, n_points/2, max_points_per_node, (split_dim + 1) % dimension>> left;
-	std::unique_ptr<KDTree<CoordsType, dimension, n_points/2, max_points_per_node, (split_dim + 1) % dimension>> right;
+	using child =
+		std::conditional_t< (n_points/2 <= max_points_per_node),
+							KDTreeLeaf<CoordsType, dimension, n_points / 2>,
+							KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
+							>;
+	/*using right_child =
+		std::conditional_t< (n_points / 2 <= max_points_per_node),
+		KDTreeLeaf<CoordsType, dimension, n_points - n_points / 2>,
+		KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
+		>;*/
+	//<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
+	//<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
+	child left;
+	child right;
 };
 
 
 
 
 
-template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim >
-class KDTreeLeaf : public KDTree<CoordsType, dimension, n_points, max_points_per_node, split_dim> {
-public:
-	KDTreeLeaf(const std::array<point_type, max_points_per_node>& points_) : points(points_) {}
-
-	std::vector<std::array<point_type, max_points_per_node>> radius_search (const point_type& p, double radius) override {
-		return std::vector<std::array<point_type, max_points_per_node>>({ points });
-	}
-
-private:
-	std::array<point_type, max_points_per_node> points;
-};
 
 }//namespace kdt
