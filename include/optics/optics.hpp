@@ -382,11 +382,10 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	ordered_list.reserve( points.size() );
 	std::vector<double> reachability( points.size(), -1.0f );
 	
-	
-	bool use_nanoflann = true;
+	int method = 0; // 0 = nanoflann, 1 = RTree, 2 = KDTree
 
 	std::vector<std::vector<std::size_t>> neighbors;
-	if ( use_nanoflann ) {
+	if ( method == 0 ) {
 		//nanoflann
 		const PointCloud<T, dimension> cloud = toPointCloud( points );
 		auto index = create_kd_tree( cloud );
@@ -399,7 +398,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 				points
 			);
 	}
-	else {
+	else if ( method == 1 ){
 		//RTree
 		const auto rtree = initialize_rtree( points );
 
@@ -411,6 +410,20 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 		{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
 				points
 			);
+	}
+	else {
+		assert( method == 3 );
+		/*
+		//TODO: Get this to work:
+		const auto kd_tree = kdt::KDTree<T, dimension, n_points, 16>( points );
+		neighbors =
+			fplus::transform_parallelly_n_threads(
+				n_threads,
+				[&kd_tree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+		{ return find_neighbor_indices_kd_tree( point, epsilon, kd_tree ); },
+				points
+			);
+			*/
 	}
 
 
