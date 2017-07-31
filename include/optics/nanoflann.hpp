@@ -144,11 +144,11 @@ namespace nanoflann
 	class RadiusResultSet
 	{
 	public:
-		const DistanceType radius;
+		const double radius;
 
-		std::vector<std::pair<IndexType,DistanceType> >& m_indices_dists;
+		std::vector<std::pair<IndexType,double> >& m_indices_dists;
 
-		inline RadiusResultSet(DistanceType radius_, std::vector<std::pair<IndexType,DistanceType> >& indices_dists) : radius(radius_), m_indices_dists(indices_dists)
+		inline RadiusResultSet(double radius_, std::vector<std::pair<IndexType,double> >& indices_dists) : radius(radius_), m_indices_dists(indices_dists)
 		{
 			init();
 		}
@@ -162,13 +162,13 @@ namespace nanoflann
 
 		inline bool full() const { return true; }
 
-		inline void addPoint(DistanceType dist, IndexType index)
+		inline void addPoint(double dist, IndexType index)
 		{
 			if (dist<radius)
 				m_indices_dists.push_back(std::make_pair(index,dist));
 		}
 
-		inline DistanceType worstDist() const { return radius; }
+		inline double worstDist() const { return radius; }
 
 		/** Clears the result set and adjusts the search radius. */
 		inline void set_radius_and_clear( const DistanceType r )
@@ -361,7 +361,7 @@ namespace nanoflann
 
 		L2_Simple_Adaptor(const DataSource &_data_source) : data_source(_data_source) { }
 
-		inline DistanceType operator()(const T* a, const size_t b_idx, size_t size) const {
+		inline double operator()(const T* a, const size_t b_idx, size_t size) const {
 			return data_source.kdtree_distance(a,b_idx,size);
 		}
 
@@ -942,7 +942,7 @@ namespace nanoflann
 		 *  \sa knnSearch, findNeighbors, radiusSearchCustomCallback
 		 * \return The number of points within the given radius (i.e. indices.size() or dists.size() )
 		 */
-		size_t radiusSearch(const ElementType *query_point,const DistanceType &radius, std::vector<std::pair<IndexType,DistanceType> >& IndicesDists, const SearchParams& searchParams) const
+		size_t radiusSearch(const ElementType *query_point,const double &radius, std::vector<std::pair<IndexType,double> >& IndicesDists, const SearchParams& searchParams) const
 		{
 			RadiusResultSet<DistanceType,IndexType> resultSet(radius,IndicesDists);
 			const size_t nFound = radiusSearchCustomCallback(query_point,resultSet,searchParams);
@@ -1210,10 +1210,10 @@ namespace nanoflann
 			/* If this is a leaf node, then do check and return. */
 			if ((node->child1 == NULL)&&(node->child2 == NULL)) {
 				//count_leaf += (node->lr.right-node->lr.left);  // Removed since was neither used nor returned to the user.
-				DistanceType worst_dist = result_set.worstDist();
+				double worst_dist = result_set.worstDist();
 				for (IndexType i=node->node_type.lr.left; i<node->node_type.lr.right; ++i) {
 					const IndexType index = vind[i];// reorder... : i;
-					DistanceType dist = distance(vec, index, (DIM>0 ? DIM : dim));
+					double dist = distance(vec, index, (DIM>0 ? DIM : dim));
 					if (dist<worst_dist) {
 						result_set.addPoint(dist,vind[i]);
 					}

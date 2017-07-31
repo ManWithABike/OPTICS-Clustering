@@ -58,7 +58,7 @@ void clustering_test_2() {
 
 void clustering_test_3(){
     static const int N = 2;
-	typedef std::array<char, N> point; //A list of N cartesian coordinates makes a point
+	typedef std::array<int, N> point; //A list of N cartesian coordinates makes a point
 
     std::vector<point> points; //Your list of points goes here
 	points = { {100,100}, {102,100}, {101,101},           //cluster 1
@@ -552,7 +552,7 @@ void chi_cluster_tree_tests_2() {
 			  })}
 	});
 
-	auto clusters = optics::internal::flat_clusters_to_tree( flat_clusters );
+	auto clusters = optics::flat_clusters_to_tree( flat_clusters );
 	assert( clusters.size() == 2 );
 	assert( trees_are_equal( clusters[0].get_root(), expected_result[0].get_root() ) );
 	assert( trees_are_equal( clusters[1].get_root(), expected_result[1].get_root() ) );

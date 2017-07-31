@@ -147,7 +147,7 @@ struct PointCloud {
 	inline size_t kdtree_get_point_count() const { return size(); }
 
 	// Returns the squared distance between the vector "p1[0:size-1]" and the data point with index "idx_p2" stored in the class:
-	inline T kdtree_distance( const T* p1, const size_t idx_p2, size_t /*size*/ ) const {
+	inline double kdtree_distance( const T* p1, const size_t idx_p2, size_t /*size*/ ) const {
 		return geom::dist<T,dimension>( *reinterpret_cast<const Point*>(p1), pts[idx_p2] );
 	}
 
@@ -189,12 +189,12 @@ std::vector<std::size_t> find_neighbor_indices_kdtree( const my_kd_tree_t<T, dim
 												 const Point<T, dimension>& point,
 												 double epsilon ) {
 	const double search_radius = epsilon;
-	std::vector<std::pair<std::size_t, T>> ret_matches;
+	std::vector<std::pair<std::size_t, double>> ret_matches;
 
 	nanoflann::SearchParams params;
 	//params.sorted = false;
 
-	const size_t nMatches = index.radiusSearch( point.data(), search_radius, ret_matches, params );
+	const size_t nMatches = index.radiusSearch( &point[0], search_radius, ret_matches, params );
 
 	std::vector<std::size_t> result;
 	result.reserve( nMatches );
