@@ -137,10 +137,10 @@ public:
 private:
 	double split;
 	using child =
-		std::conditional_t< (n_points/2 <= max_points_per_node),
-							KDTreeLeaf<CoordsType, dimension, n_points / 2>,
-							KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
-							>;
+		typename std::conditional< (n_points / 2 <= max_points_per_node),
+		KDTreeLeaf<CoordsType, dimension, n_points / 2>,
+		KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
+		>::type;
 	/*using right_child =
 		std::conditional_t< (n_points / 2 <= max_points_per_node),
 		KDTreeLeaf<CoordsType, dimension, n_points - n_points / 2>,

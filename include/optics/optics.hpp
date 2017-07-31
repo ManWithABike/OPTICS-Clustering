@@ -356,7 +356,7 @@ PointCloud<T, dimension> toPointCloud( const std::vector<Point<T, dimension>>& p
 	PointCloud<T, dimension> cloud;
 	cloud.pts.reserve( points.size() );
 	for ( const auto& p : points ) {
-		cloud.pts.push_back( PointCloud<T, dimension>::Point( p ) );
+		cloud.pts.push_back( p );
 	}
 
 	return cloud;
