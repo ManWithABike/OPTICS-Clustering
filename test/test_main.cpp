@@ -604,57 +604,35 @@ void kdtree_tests() {
 		kdt::KDTree<T, dim, n_pts, max_pts> kd_tree( points );
 
 		auto neighbors = kd_tree.radius_search( { -4 }, 1.01 );
-		std::vector<std::array<pt_t, max_pts>> exp_neighbors( { { -4, -3 } } );
+		std::vector<pt_t> exp_neighbors{ {{ -4 }}, {{-3 }} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { -3 }, 1.01 );
-		exp_neighbors = {
-			{{ -4, -3 }}, 
-			{{ -1, -2} }
-		};
+		exp_neighbors = { {{ -4 }}, {{ -3 }}, {{-2 }} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { -2 }, 1.01 );
-		exp_neighbors = {
-			{ { -4, -3 } },
-			{ { -1, -2 } }
-		};
+		exp_neighbors = { {{-3}}, {{-1}}, {{-2}} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { -1 }, 1.01 );
-		exp_neighbors = {
-			{ { -4, -3 } },
-			{ { -1, -2 } }
-		};
+		exp_neighbors = { { { -1}}, {{-2 }} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 1 }, 1.01 );
-		exp_neighbors = {
-			{ { -1, -2 } },
-			{ { 2, 1 } }
-		};
+		exp_neighbors = { {{2}}, {{1}} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 2 }, 1.01 );
-		exp_neighbors = {
-			{ { -1, -2 } },
-			{ { 2, 1 } },
-			{ { 4, 3 } }
-		};
+		exp_neighbors = { {{2}}, {{1}},	{{3}} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 3 }, 1.01 );
-		exp_neighbors = {
-			{ { 2, 1 } },
-			{ { 4, 3 } }
-		};
+		exp_neighbors = { {{ 2}}, {{4}}, {{3}} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 4 }, 1.01 );
-		exp_neighbors = {
-			{ { 2, 1 } },
-			{ { 4, 3 } }
-		};
+		exp_neighbors = { { {4} }, { {3}} };
 		assert( neighbors == exp_neighbors );
 	}
 
@@ -675,10 +653,9 @@ void kdtree_tests() {
 		kdt::KDTree<T, dim, n_pts, max_pts> kd_tree( points );
 
 		auto neighbors = kd_tree.radius_search( { 0 }, 1.01 );
-		std::vector<std::array<pt_t, max_pts>> exp_neighbors
+		std::vector<pt_t> exp_neighbors
 		{
-			{ { -1, 0 } },
-			{ { 0, 0} }
+			{ { -1}}, {{0 } }, { { 0}}, {{0 } }
 		};
 		assert( neighbors == exp_neighbors );
 	}
@@ -702,67 +679,48 @@ void kdtree_tests() {
 		kdt::KDTree<T, dim, n_pts, max_pts> kd_tree( points );
 
 		auto neighbors = kd_tree.radius_search( { 0, 10 }, 1.01 );
-		std::vector<std::array<pt_t, max_pts>> exp_neighbors
-		{
-			{{ {{ 0, 8 }}, {{2, 6}} }},
-			{{ {{ 0, 10 }}, {{0,9}}  } }
-		};
+		std::vector<pt_t> exp_neighbors
+		{ {{ 0, 10 }}, {{0,9}} };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 0, 9 }, 1.01 );
 		exp_neighbors =
 		{
-			{ { { { 0, 8 } },{ { 2, 6 } } } },
-			{ { { { 0, 10 } },{ { 0,9 } } } }
+			 { { 0, 8 } },
+			 { { 0, 10 } },{ { 0,9 } } 
 		};
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 0, 8 }, 1.01 );
 		exp_neighbors =
-		{
-			{ { { { 0, 8 } },{ { 2, 6 } } } },
-			{ { { { 0, 10 } },{ { 0,9 } } } }
-		};
+		{ { { 0, 8 } },{ { 0,9 } } };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 2, 6 }, 1.01 );
 		exp_neighbors =
-		{
-			{ { { { 0, 8 } },{ { 2, 6 } } } },
-			{ { { { 2, 5 } },{ { 2, 4 } } } }
-		};
+		{{ { 2, 6 } },{ { 2, 5 } }};
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 2, 5 }, 1.01 );
 		exp_neighbors =
-		{
-			{ { { { 0, 8 } },{ { 2, 6 } } } },
-			{ { { { 4, 2 } },{ { 4, 1 } } } },
-			{ { { { 2, 5 } },{ { 2, 4 } } } }
-		};
+		{{ { 2, 6 } },{ { 2, 5 } },{ { 2, 4 } }};
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 2, 4 }, 1.01 );
 		exp_neighbors =
-		{
-			{ { { { 0, 8 } },{ { 2, 6 } } } },
-			{ { { { 4, 2 } },{ { 4, 1 } } } },
-			{ { { { 2, 5 } },{ { 2, 4 } } } }
-		};
+		{{ { 2, 5 } },{ { 2, 4 } }};
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 4, 2 }, 1.01 );
 		exp_neighbors =
 		{
-			{ { { { 4, 2 } },{ { 4, 1 } } } }
+			{ { 4, 2 } },{ { 4, 1 } }
 		};
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree.radius_search( { 4, 1 }, 1.01 );
 		exp_neighbors =
-		{
-			{ { { { 4, 2 } },{ { 4, 1 } } } }
-		};
+		{ {{4, 2}}, {{ 4, 1 }} };
 		assert( neighbors == exp_neighbors );
 	}
 

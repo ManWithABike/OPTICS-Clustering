@@ -360,7 +360,7 @@ PointCloud<T, dimension> toPointCloud( const std::vector<Point<T, dimension>>& p
 	}
 
 	return cloud;
-};
+}
 
 
 template<typename T, std::size_t dimension, std::size_t n_threads = 1>

@@ -23,20 +23,41 @@ constexpr bool is_powerof2(std::size_t v) {
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim = 0 >
 class KDTree;
 
+template<typename CoordsType, std::size_t dimension>
+static double square_distance( const std::array<CoordsType, dimension>& p1, const std::array<CoordsType, dimension>& p2 ) {
+	double result = 0.0;
+	for ( std::size_t i = 0; i < dimension; i++ ) {
+		double d = (p1[i] - p2[i]);
+		result +=  d*d;
+	}
+	return result;
+}
+
 
 template<typename CoordsType, std::size_t dimension, std::size_t n_points >
 class KDTreeLeaf {
-public:
-	typedef std::array<CoordsType, dimension> point_type;
-	KDTreeLeaf() {}
-	KDTreeLeaf( const std::array<point_type, n_points>& points_ ) : points( points_ ) {}
 
-	std::vector<std::array<point_type, n_points>> radius_search( const point_type& p, double radius ){
-		return std::vector<std::array<point_type, n_points>>( { points } );
+	/*
+	template<CoordsType, dimension, 2 * n_point, std::size_t max_points_per_node, std::size_t split_dim>
+	friend class KDTree;
+	template<CoordsType, dimension, 2 * n_points + 1, std::size_t max_points_per_node, std::size_t split_dim>
+	friend class KDTree;
+	*/
+public:
+	typedef std::array<CoordsType, dimension> Point;
+	KDTreeLeaf() {}
+	KDTreeLeaf( const std::array<Point, n_points>& points_ ) : points( points_ ) {}
+
+	void radius_search_( const Point& p, double radius, std::vector<Point>& neighbors ){
+		for ( const auto& x : points ) {
+			if ( square_distance( p, x ) <= radius*radius ) {
+				neighbors.push_back( x );
+			}
+		}
 	}
 
 private:
-	std::array<point_type, n_points> points;
+	std::array<Point, n_points> points;
 };
 
 
@@ -62,15 +83,15 @@ make_child( const std::array<std::array<CoordsType, dimension>, n_points>& point
 
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim>
 class KDTree {
-	static_assert(is_powerof2(n_points), "The total number of points stored in a KDTree 'n_points' has to be a power of two.");
+	//static_assert(is_powerof2(n_points), "The total number of points stored in a KDTree 'n_points' has to be a power of two.");
 	//static_assert(is_powerof2(max_pts_per_node), "");
 
 public:
-	typedef std::array<CoordsType, dimension> point_type;
+	typedef std::array<CoordsType, dimension> Point;
 
 	KDTree() {}
 
-	KDTree(const std::array<point_type, n_points>& points_)
+	KDTree(const std::array<Point, n_points>& points_)
 	{
 		//std::array<std::size_t, n_points> indices = fplus::numbers<std::size_t, std::array<std::size_t, n_points>>(static_cast<std::size_t>(0), n_points);
 		//fplus::nth_element 
@@ -81,18 +102,18 @@ public:
 		auto split_point = points[split_index];
 		split = split_point[split_dim];
 		*/
-		const auto comp = [](const point_type& p1, const point_type& p2) -> bool {
+		const auto comp = []( const Point& p1, const Point& p2 ) {
 			return p1[split_dim] < p2[split_dim];
 		};
 
 		auto split_point = fplus::nth_element_by(comp, n_points / 2, points_);
 		split = split_point[split_dim];
 
-		std::array<point_type, n_points / 2> left_points; //Could hold references instead of real points?
-		std::array<point_type, n_points - n_points / 2> right_points;
+		std::array<Point, n_points / 2> left_points; //Could hold references instead of real points?
+		std::array<Point, n_points - n_points / 2> right_points;
 		std::size_t l_idx(0);
 		std::size_t r_idx(0);
-		std::vector<point_type> on_split_points;
+		std::vector<Point> on_split_points;
 		on_split_points.reserve( 2 );
 		for (const auto& p : points_) {
 			if (l_idx < left_points.size() && p[split_dim] < split) {
@@ -121,39 +142,53 @@ public:
 	
 	}
 
-	std::vector<std::array<point_type, max_points_per_node>> radius_search (const point_type& p, double radius) {
-		if (p[split_dim] + radius < split) {
-			return left.radius_search(p, radius);
-		}
-		else if (p[split_dim] - radius >= split) {
-			return right.radius_search(p, radius);
-		}
-		else {
-			return fplus::append(left.radius_search(p, radius), right.radius_search(p, radius));
-		}
+
+	std::vector<Point> radius_search (const Point& p, double radius) {
+		std::vector<Point> neighbors;
+		neighbors.reserve( 2* max_points_per_node ); //TODO: intelligent guess of number of expected neighbors?
+		radius_search_( p, radius, neighbors );
+		neighbors.shrink_to_fit();
+		return neighbors;
 	}
 
 
-private:
+//private:
 	double split;
-	using child =
-		typename std::conditional< (n_points / 2 <= max_points_per_node),
+
+//	constexpr std::size_t n_left_points() { return n_points / 2; }
+//	constexpr std::size_t n_right_points() { return n_points - (n_points / 2) };
+
+	using LeftChild =
+		typename std::conditional<(n_points / 2 <= max_points_per_node),
 		KDTreeLeaf<CoordsType, dimension, n_points / 2>,
 		KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
 		>::type;
-	/*using right_child =
-		std::conditional_t< (n_points / 2 <= max_points_per_node),
-		KDTreeLeaf<CoordsType, dimension, n_points - n_points / 2>,
-		KDTree<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
-		>;*/
+	using RightChild =
+		typename std::conditional< (n_points - (n_points / 2) <= max_points_per_node),
+		KDTreeLeaf<CoordsType, dimension, n_points - (n_points / 2)>,
+		KDTree<CoordsType, dimension, n_points - (n_points / 2), max_points_per_node, (split_dim + 1) % dimension>
+		>::type;
+
 	//<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
 	//<CoordsType, dimension, n_points / 2, max_points_per_node, (split_dim + 1) % dimension>
-	child left;
-	child right;
+	LeftChild left;
+	RightChild right;
+
+	void radius_search_( const Point& p, double radius, std::vector<Point>& neighbors ) {
+		if ( p[split_dim] + radius < split ) {
+			return left.radius_search_( p, radius, neighbors );
+		}
+		else if ( p[split_dim] - radius >= split ) {
+			return right.radius_search_( p, radius, neighbors );
+		}
+		else {
+			left.radius_search_( p, radius, neighbors );
+			right.radius_search_( p, radius, neighbors );
+			return;
+		}
+	}
+
 };
-
-
-
 
 
 
