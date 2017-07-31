@@ -87,7 +87,7 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	sw::Stopwatch watch;
 	for ( std::size_t lap = 1; lap <= laps; lap++ ) {
 		if ( laps < 10 || (lap % (laps/10) == 0) ) std::cout << lap << "..";
-		optics::compute_reachability_dists<type ,dimension, n_threads>( points, min_pts, epsilon );
+		optics::compute_reachability_dists<type, dimension, n_threads>( points, min_pts, epsilon );
 		watch.lap();
 	}
 
@@ -103,19 +103,20 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 
 int main() {
 	std::cout << "OPTICS Benchmark" << std::endl;
-	
+
 	//test<100000, 2, 100 * 100, double, 10>( 10 );
-	
-	
+
+
 	std::cout << "--- 2 dim ---" << std::endl;
-	test<100000, 2, 100*100, double, 10, 1>( 10 );
+	test<100000, 2, 100 * 100, double, 10, 1>( 10 );
 	std::cout << std::endl << "--- 3 dim ---" << std::endl;
-	test<100000, 3, 100*100, double, 10, 1>( 10 );
+	test<100000, 3, 100 * 100, double, 10, 1>( 10 );
 	std::cout << std::endl << "--- 4 dim ---" << std::endl;
-	test<100000, 4, 100*100, double,  5, 1>( 10 );
+	test<100000, 4, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 6 dim ---" << std::endl;
-	test<100000, 6, 100*100, double,  5, 1>( 10 );
-	
+	test<100000, 6, 100 * 100, double, 5, 1>( 10 );
+
 
 	return 0;
+
 }

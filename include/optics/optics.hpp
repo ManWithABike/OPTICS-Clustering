@@ -40,6 +40,9 @@ namespace optics {
 typedef std::pair<std::size_t, std::size_t> chi_cluster_indices;
 typedef optics::Tree<chi_cluster_indices> cluster_tree;
 
+template<typename T, std::size_t dimension>
+using Point = std::array<T, dimension>;
+
 
 struct reachability_dist {
 	reachability_dist( std::size_t point_index_, double reach_dist_ ) : point_index( point_index_ ), reach_dist( reach_dist_ ) {}
@@ -61,8 +64,6 @@ inline std::ostringstream& operator<<( std::ostringstream& stream, const reachab
 	stream << r.to_string();
 	return stream;
 }
-
-namespace internal{
 
 
 namespace bg = boost::geometry;
@@ -135,8 +136,79 @@ double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geo
 
 
 
+template<typename T, std::size_t dimension>
+struct PointCloud {
+	using Point = std::array<T, dimension>;
+
+	std::vector<Point> pts;
+
+	// Must return the number of data points
+	inline size_t size() const { return pts.size(); }
+	inline size_t kdtree_get_point_count() const { return size(); }
+
+	// Returns the squared distance between the vector "p1[0:size-1]" and the data point with index "idx_p2" stored in the class:
+	inline T kdtree_distance( const T* p1, const size_t idx_p2, size_t /*size*/ ) const {
+		return geom::dist<T,dimension>( *reinterpret_cast<const Point*>(p1), pts[idx_p2] );
+	}
+
+	// Returns the dim'th component of the idx'th point in the class:
+	// Since this is inlined and the "dim" argument is typically an immediate value, the
+	//  "if/else's" are actually solved at compile time.
+	inline T kdtree_get_pt( const size_t idx, int dim ) const {
+		return pts[idx][dim];
+	}
+
+	// Optional bounding-box computation: return false to default to a standard bbox computation loop.
+	//   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it again.
+	//   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+	template<class BBOX>
+	bool kdtree_get_bbox( BBOX& /*bb*/ ) const { return false; }
+
+};
+
+
+template<typename T, std::size_t dimension>
+using my_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+	nanoflann::L2_Simple_Adaptor<T, PointCloud<T, dimension>>,
+	PointCloud<T, dimension>,
+	dimension>;
+
+template<typename T, std::size_t dimension>
+std::shared_ptr<my_kd_tree_t<T, dimension>> create_kd_tree( const PointCloud<T, dimension>& cloud ) {
+	auto index = std::make_shared<my_kd_tree_t<T, dimension>>( dimension,
+															   cloud,
+															   nanoflann::KDTreeSingleIndexAdaptorParams( 10 ) );
+	index->buildIndex();
+
+	return index;
+}
+
+
+template<typename T, std::size_t dimension>
+std::vector<std::size_t> find_neighbor_indices_kdtree( const my_kd_tree_t<T, dimension>& index,
+												 const Point<T, dimension>& point,
+												 double epsilon ) {
+	const double search_radius = epsilon;
+	std::vector<std::pair<std::size_t, T>> ret_matches;
+
+	nanoflann::SearchParams params;
+	//params.sorted = false;
+
+	const size_t nMatches = index.radiusSearch( point.data(), search_radius, ret_matches, params );
+
+	std::vector<std::size_t> result;
+	result.reserve( nMatches );
+
+	for ( auto const& match : ret_matches ) {
+		result.push_back( match.first );
+	}
+
+	return result;
+}
+
+
 template<typename T, std::size_t N>
-std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
+std::vector<std::size_t> find_neighbor_indices_rtree( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
 	static_assert( std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported" );
 	assert( epsilon > 0 );
 	//produce search box
@@ -191,14 +263,18 @@ std::vector<std::size_t> find_neighbor_indices( const geom::Vec<T, N>& point, co
 
 
 template<typename T, std::size_t N>
-fplus::maybe<double> compute_core_dist( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const std::size_t min_pts ) {
+fplus::maybe<double> compute_core_dist( const Point<T, N>& point,
+										const std::vector<Point<T,N>>& points,
+										const std::vector<std::size_t>& neighbor_indices,
+										const std::size_t min_pts ) 
+{
 
 	if ( neighbor_indices.size() < min_pts ) { return{}; }
 
 	auto core_elem_idx = fplus::nth_element_on( [&points, &point]( const std::size_t& idx ) -> double {
-		return geom::square_dist( point, points[idx] );
+		return geom::square_dist<T,N>( point, points[idx] );
 	}, min_pts-1, neighbor_indices );
-	double core_dist = geom::dist( points[core_elem_idx], point );
+	double core_dist = geom::dist<T, N>( points[core_elem_idx], point );
 	return core_dist;
 }
 
@@ -217,12 +293,12 @@ T pop_from_set( std::set<T>& set ) {
 
 
 template<typename T, std::size_t N>
-void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist,
+void update( const Point<T, N>& point, const std::vector<Point<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist,
 				const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds
 			) {
 	for ( const auto& o : neighbor_indices ) {
 		if ( processed[o] ) { continue; }
-		double new_reachability_dist = fplus::max( core_dist, geom::dist( point, points[o] ) );
+		double new_reachability_dist = fplus::max( core_dist, geom::dist<T,N>( point, points[o] ) );
 		if ( reachability[o] < 0.0 ) {
 			reachability[o] = new_reachability_dist;
 			seeds.insert( reachability_dist( o, new_reachability_dist ) );
@@ -239,18 +315,19 @@ void update( const geom::Vec<T, N>& point, const std::vector<geom::Vec<T, N>>& p
 	}
 }
 
-} //namespace internal
 
 
 template<typename T, std::size_t dimension>
-double epsilon_estimation( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts ){
+double epsilon_estimation( const std::vector<Point<T, dimension>>& points, const std::size_t min_pts ){
 	static_assert(std::is_convertible<double, T>::value, "optics::epsilon_estimation: Point type 'T' must be convertible to double!");
 	static_assert(dimension >= 1, "optics::epsilon_estimation: dimension must be >=1");
 	if ( points.empty() ) { return 0; }
 
 	double d = static_cast<double> (dimension);
-	auto  space = geom::bounding_box( points );
-	double space_volume = static_cast<double>(geom::product( geom::abs(space.first - space.second) ));
+	auto  space = geom::bounding_box( 
+		fplus::transform( []( const Point<T, dimension>&p ) -> geom::Vec<T, dimension> {return p; }, points )
+	);
+	double space_volume = static_cast<double>(geom::product( geom::abs<T, dimension>(space.first - space.second) ));
 	
 	double space_per_minpts_points = (space_volume / static_cast<double>(points.size())) * static_cast<double>(min_pts);
 	double n_dim_unit_ball_vol = std::sqrt( std::pow( geom::pi, d ) ) / std::tgamma( d / 2.0 + 1.0 );
@@ -263,25 +340,27 @@ double epsilon_estimation( const std::vector<geom::Vec<T, dimension>>& points, c
 }
 
 
-template<typename T, std::size_t dimension>
-double epsilon_estimation( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts ) {
-	static_assert(std::is_convertible<double, T>::value, "optics::epsilon_estimation: Point type 'T' must be convertible to double!");
-	static_assert(dimension >= 1, "optics::epsilon_estimation: dimension must be >=1");
-	if ( points.empty() ) { return 0; }
 
-	std::vector<geom::Vec<T, dimension>> geom_points;
-	geom_points.reserve( points.size() );
+template<typename T, std::size_t dimension>
+PointCloud<T, dimension> toPointCloud( const std::vector<Point<T, dimension>>& points ) {
+	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
+	static_assert(std::is_convertible<double, T>::value,
+				   "optics::compute_reachability_dists: Point type 'T' must be convertible to double!");
+	static_assert(dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
+	if ( points.empty() ) { return {}; }
+
+	PointCloud<T, dimension> cloud;
+	cloud.pts.reserve( points.size() );
 	for ( const auto& p : points ) {
-		geom_points.push_back( geom::Vec<T, dimension>( p ) );
+		cloud.pts.push_back( PointCloud<T, dimension>::Point( p ) );
 	}
 
-	return epsilon_estimation( geom_points, min_pts );
-}
-
+	return cloud;
+};
 
 
 template<typename T, std::size_t dimension, std::size_t n_threads = 1>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<geom::Vec<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
 	static_assert(n_threads >= 1, "Number of threads must be >= 1");
 	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
 	static_assert(std::is_convertible<T,double>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
@@ -291,6 +370,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 	if ( epsilon <= 0.0 ) {
 		epsilon = epsilon_estimation( points, min_pts );
 	}
+	assert( epsilon > 0 );
 
 	//algorithm tracker
 	std::vector<bool> processed( points.size(), false );
@@ -298,24 +378,39 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 	ordered_list.reserve( points.size() );
 	std::vector<double> reachability( points.size(), -1.0f );
 	
-	//nanoflann
-	//std::vector<std::vector<std::size_t>> neighbors = get_nanoflann_neighbors<T, dimension>( points, epsilon );
 	
+
+	//nanoflann
+	const PointCloud<T, dimension> cloud = toPointCloud( points );
+	auto index = create_kd_tree( cloud );
+	
+	std::vector<std::vector<std::size_t>> neighbors =
+		fplus::transform_parallelly_n_threads(
+			n_threads,
+			[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+			{ return find_neighbor_indices_kdtree( *index, point, epsilon ); },
+			points
+		);
+	
+
 	//RTree
 	//the rtree for fast nearest neighbour search
-	const auto rtree = internal::initialize_rtree( points );
+	/*
+	const auto rtree = initialize_rtree( points );
 
 	//Compute all neighbors parallely beforehand
 	std::vector<std::vector<std::size_t>> neighbors =
 		fplus::transform_parallelly_n_threads(
 			n_threads,
 			[&rtree, epsilon, min_pts]( const geom::Vec<T, dimension>& point ) -> std::vector<std::size_t> 
-				{ return internal::find_neighbor_indices( point, epsilon, rtree ); },
+				{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
+				
 			points
 		);
-	
+	*/
+
 	//KDTree
-	const kdt::KDTree kdtree ( points );
+	//const kdt::KDTree kdtree ( points );
 
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {
@@ -325,27 +420,27 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 		std::set<reachability_dist> seeds;
 
 		auto neighbor_indices = neighbors[point_idx];
-		//auto neighbor_indices = internal::find_neighbor_indices( points[point_idx], epsilon, rtree );
+		//auto neighbor_indices = find_neighbor_indices( points[point_idx], epsilon, rtree );
 
-		fplus::maybe<double> core_dist_m = internal::compute_core_dist( points[point_idx], points, neighbor_indices, min_pts );
+		fplus::maybe<double> core_dist_m = compute_core_dist( points[point_idx], points, neighbor_indices, min_pts );
 		if ( !core_dist_m.is_just() ) { continue; }
 		double core_dist = core_dist_m.unsafe_get_just();
 
-		internal::update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds );
+		update( points[point_idx], points, neighbor_indices, core_dist, processed, reachability, seeds );
 		while ( !seeds.empty() ) {
-			reachability_dist s = internal::pop_from_set( seeds );
+			reachability_dist s = pop_from_set( seeds );
 			assert( processed[s.point_index] == false );
 			processed[s.point_index] = true;
 			ordered_list.push_back( s.point_index );
 
 			auto s_neighbor_indices = neighbors[s.point_index];
-			//auto s_neighbor_indices = internal::find_neighbor_indices( points[s.point_index], epsilon, rtree );
+			//auto s_neighbor_indices = find_neighbor_indices( points[s.point_index], epsilon, rtree );
 			
-			auto s_core_dist_m = internal::compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
+			auto s_core_dist_m = compute_core_dist( points[s.point_index], points, s_neighbor_indices, min_pts );
 			if ( !s_core_dist_m.is_just() ) { continue; }
 			double s_core_dist = s_core_dist_m.unsafe_get_just();
 
-			internal::update( points[s.point_index], points, s_neighbor_indices, s_core_dist, processed, reachability, seeds );
+			update( points[s.point_index], points, s_neighbor_indices, s_core_dist, processed, reachability, seeds );
 		}
 
 	}
@@ -361,6 +456,8 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<geo
 }
 
 
+
+/*
 template<typename T, std::size_t dimension, std::size_t n_threads = 1>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = 0.0 ) {
 	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
@@ -376,7 +473,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 
 	return compute_reachability_dists<T, dimension, n_threads>( geom_points, min_pts, epsilon );
 }
-
+*/
 
 
 /**Exports a list of reachability distances into a csv file.
@@ -738,7 +835,6 @@ inline std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector
 }
 
 
-namespace internal{
 
 inline std::vector<cluster_tree> flat_clusters_to_tree( const std::vector<chi_cluster_indices>& clusters_flat ){
 	//sort clusters_flat such that children are ordered before their parents in clusters_flat_sorted
@@ -808,12 +904,11 @@ inline void draw_cluster( bgr_image& cluster_indicator_img, const Node<chi_clust
 	}
 }
 
-}//namepsace internal
 
 
 inline std::vector<cluster_tree> get_chi_clusters( const std::vector<reachability_dist>& reach_dists, const double chi, std::size_t min_pts, const double steep_area_min_diff = 0.0 ) {
 	auto clusters_flat = get_chi_clusters_flat( reach_dists, chi, min_pts, steep_area_min_diff );
-	return internal::flat_clusters_to_tree( clusters_flat );
+	return flat_clusters_to_tree( clusters_flat );
 }
 
 
@@ -838,7 +933,7 @@ inline bgr_image  draw_reachability_plot_with_chi_clusters( const std::vector<re
 		x_norm =  static_cast<double>(min_width)/ static_cast<double>(reach_dists.size()-1);
 	}
 	for ( const auto& t : cluster_trees ) {
-		internal::draw_cluster( cluster_indicator_img, t.get_root(), 0, x_norm, v_space );
+		draw_cluster( cluster_indicator_img, t.get_root(), 0, x_norm, v_space );
 	}
 	img.append_rows(cluster_indicator_img);
 	return img;
