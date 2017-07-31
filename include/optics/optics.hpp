@@ -87,7 +87,7 @@ using RTree = typename bgi::rtree<TreeValue<T, N>, bgi::rstar<16>>; //TODO: Numb
 template <typename T, size_t N, size_t I>
 struct set_boost_point_coords
 {
-	static inline int set( Pt<T, N>& boost_pt, const geom::Vec<T, N>& coords )
+	static inline int set( Pt<T, N>& boost_pt, const Point<T, N>& coords )
 	{
 		bg::set<I>( boost_pt, coords[I] );
 		return set_boost_point_coords<T, N, I - 1>::set( boost_pt, coords );
@@ -97,7 +97,7 @@ struct set_boost_point_coords
 template <typename T, size_t N>
 struct set_boost_point_coords<T, N, 0>
 {
-	static inline int set( Pt<T, N>& boost_pt, const geom::Vec<T, N>& coords )
+	static inline int set( Pt<T, N>& boost_pt, const Point<T, N>& coords )
 	{
 		bg::set<0>( boost_pt, coords[0] );
 		return 0;
@@ -106,7 +106,7 @@ struct set_boost_point_coords<T, N, 0>
 
 
 template<typename T, std::size_t N>
-Pt<T, N> geom_to_boost_point( const geom::Vec<T, N>& point ) {
+Pt<T, N> geom_to_boost_point( const Point<T, N>& point ) {
 	Pt<T, N> boost_point;
 	set_boost_point_coords<T, N, N - 1 >::set( boost_point, point );
 	return boost_point;
@@ -115,11 +115,11 @@ Pt<T, N> geom_to_boost_point( const geom::Vec<T, N>& point ) {
 
 
 template<typename T, std::size_t N>
-RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
+RTree<T, N> initialize_rtree( const std::vector<Point<T, N>>& points ) {
 	//Insert all points with index into cloud
 	size_t idx_id = 0;
-	auto cloud = fplus::transform( [&idx_id]( const geom::Vec<T, N>& point ) -> TreeValue<T, N> {
-		return{ geom_to_boost_point( point ),  idx_id++ };
+	auto cloud = fplus::transform( [&idx_id]( const Point<T, N>& point ) -> TreeValue<T, N> {
+		return{ geom_to_boost_point<T,N>( point ),  idx_id++ };
 	}, points );
 
 	//Create an rtree from the cloud using packaging
@@ -129,7 +129,7 @@ RTree<T, N> initialize_rtree( const std::vector<geom::Vec<T, N>>& points ) {
 
 
 template<typename T, std::size_t dimension>
-double dist( const Pt<T,dimension>& boost_pt, const geom::Vec<T, dimension>& geom_pt ) { //TODO: Speed this up by writing a recursive template for square_dist(boost_pt, geom_pt) like geom::compute_pythagoras
+double dist( const Pt<T,dimension>& boost_pt, const Point<T, dimension>& geom_pt ) { //TODO: Speed this up by writing a recursive template for square_dist(boost_pt, geom_pt) like geom::compute_pythagoras
 	const auto dist = bg::distance( boost_pt, geom_to_boost_point( geom_pt ) );
 	return dist;
 }
@@ -208,13 +208,17 @@ std::vector<std::size_t> find_neighbor_indices_kdtree( const my_kd_tree_t<T, dim
 
 
 template<typename T, std::size_t N>
-std::vector<std::size_t> find_neighbor_indices_rtree( const geom::Vec<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
+std::vector<std::size_t> find_neighbor_indices_rtree( const Point<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
 	static_assert( std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported" );
 	assert( epsilon > 0 );
 	//produce search box
-	geom::Vec<double, N> eps_vec( epsilon );
-	geom::Vec<double, N> corner1 = (point.as_doubles() - eps_vec);
-	geom::Vec<double, N> corner2 = (point.as_doubles() + eps_vec);
+	Point<double, N> point_d = fplus::convert_elems<double>( point );
+	Point<double, N> corner1; Point<double, N> corner2;
+	for ( std::size_t i = 0; i < N; i++ ) {
+		corner1[i] = point_d[i] - epsilon;
+		corner2[i] = point_d[i] + epsilon;
+	}
+	
 	Box<double, N> query_box( geom_to_boost_point( corner1 ), geom_to_boost_point( corner2 ) );
 
 	//search neighbors in box (manhattan dist 2*epsilon)
@@ -379,38 +383,35 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	std::vector<double> reachability( points.size(), -1.0f );
 	
 	
+	bool use_nanoflann = true;
 
-	//nanoflann
-	const PointCloud<T, dimension> cloud = toPointCloud( points );
-	auto index = create_kd_tree( cloud );
-	
-	std::vector<std::vector<std::size_t>> neighbors =
-		fplus::transform_parallelly_n_threads(
-			n_threads,
-			[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-			{ return find_neighbor_indices_kdtree( *index, point, epsilon ); },
-			points
-		);
-	
+	std::vector<std::vector<std::size_t>> neighbors;
+	if ( use_nanoflann ) {
+		//nanoflann
+		const PointCloud<T, dimension> cloud = toPointCloud( points );
+		auto index = create_kd_tree( cloud );
 
-	//RTree
-	//the rtree for fast nearest neighbour search
-	/*
-	const auto rtree = initialize_rtree( points );
+		neighbors =
+			fplus::transform_parallelly_n_threads(
+				n_threads,
+				[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+		{ return find_neighbor_indices_kdtree( *index, point, epsilon ); },
+				points
+			);
+	}
+	else {
+		//RTree
+		const auto rtree = initialize_rtree( points );
 
-	//Compute all neighbors parallely beforehand
-	std::vector<std::vector<std::size_t>> neighbors =
-		fplus::transform_parallelly_n_threads(
-			n_threads,
-			[&rtree, epsilon, min_pts]( const geom::Vec<T, dimension>& point ) -> std::vector<std::size_t> 
-				{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
-				
-			points
-		);
-	*/
-
-	//KDTree
-	//const kdt::KDTree kdtree ( points );
+		//Compute all neighbors parallely beforehand
+		neighbors =
+			fplus::transform_parallelly_n_threads(
+				n_threads,
+				[&rtree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+		{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
+				points
+			);
+	}
 
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {
