@@ -6,11 +6,11 @@ project(OPTICS-Clustering)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 #gcc needs additional linker-flags "-lX11" & "-pthread"
-	set(DEBUG_FLAGS "-std=c++14 -g -O1 -L/usr/X11R6/lib -lm -lpthread -lX11 -pedantic")
-	set(RELEASE_FLAGS "-std=c++14 -O3 -L/usr/X11R6/lib -lm -lpthread -lX11 -pedantic")
+	set(DEBUG_FLAGS "-std=c++11 -g -O1 -L/usr/X11R6/lib -lm -lpthread -lX11 -pedantic")
+	set(RELEASE_FLAGS "-std=c++11 -O3 -L/usr/X11R6/lib -lm -lpthread -lX11 -pedantic")
 else()
-	set(DEBUG_FLAGS "-std=c++14 -g -O1 -pedantic")
-	set(RELEASE_FLAGS "-std=c++14 -O3 -pedantic")
+	set(DEBUG_FLAGS "-std=c++11 -g -O1 -pedantic")
+	set(RELEASE_FLAGS "-std=c++11 -O3 -pedantic")
 endif()
 
 set(CMAKE_CXX_FLAGS ${RELEASE_FLAGS})
