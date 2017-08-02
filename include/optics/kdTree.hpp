@@ -19,6 +19,7 @@ constexpr bool is_powerof2(std::size_t v) {
 	return v && ((v & (v - 1)) == 0);
 }
 
+enum DistanceTypes { MANHATTAN, EUCLIDEAN, MAXIMUM };
 
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node, std::size_t split_dim = 0 >
 class KDTree;
