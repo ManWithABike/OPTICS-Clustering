@@ -48,7 +48,7 @@ public:
 	KDTreeLeaf() {}
 	KDTreeLeaf( const std::array<Point, n_points>& points_ ) : points( points_ ) {}
 
-	void radius_search_( const Point& p, double radius, std::vector<Point>& neighbors ){
+	void radius_search_( const Point& p, double radius, std::vector<Point>& neighbors ){//TODO: make private & friend KDTree
 		for ( const auto& x : points ) {
 			if ( square_distance( p, x ) <= radius*radius ) {
 				neighbors.push_back( x );
@@ -174,7 +174,7 @@ public:
 	LeftChild left;
 	RightChild right;
 
-	void radius_search_( const Point& p, double radius, std::vector<Point>& neighbors ) {
+	void radius_search_( const Point& p, double radius, std::vector<Point>& neighbors ) { //TODO: make private
 		if ( p[split_dim] + radius < split ) {
 			return left.radius_search_( p, radius, neighbors );
 		}
