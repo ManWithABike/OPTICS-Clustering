@@ -42,7 +42,7 @@ int main__()
 	std::cout << "Estimated epsilon = " << eps << std::endl;
 
 	std::cout << "Computing Reachability-Distances..." << std::endl;
-	const auto reach_dists = optics::compute_reachability_dists( points, min_pts, eps );
+	const auto reach_dists = optics::compute_reachability_dists<1000>( points, min_pts, eps );
 	std::cout << "Done!" << std::endl;
 
 	//std::string str = fplus::show(reach_dists);

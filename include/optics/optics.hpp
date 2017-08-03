@@ -185,7 +185,7 @@ std::shared_ptr<my_kd_tree_t<T, dimension>> create_kd_tree( const PointCloud<T, 
 
 
 template<typename T, std::size_t dimension>
-std::vector<std::size_t> find_neighbor_indices_kdtree( const my_kd_tree_t<T, dimension>& index,
+std::vector<std::size_t> find_neighbor_indices_nanoflann( const my_kd_tree_t<T, dimension>& index,
 												 const Point<T, dimension>& point,
 												 double epsilon ) {
 	const double search_radius = epsilon;
@@ -206,6 +206,11 @@ std::vector<std::size_t> find_neighbor_indices_kdtree( const my_kd_tree_t<T, dim
 	return result;
 }
 
+template<typename T, std::size_t N, std::size_t n_points, std::size_t max_points_per_node>
+std::vector<std::size_t> find_neighbor_indices_kd_tree( const Point<T, N>& point, const double epsilon,
+														const kdt::KDTree<T, N, n_points, n_points, max_points_per_node, 0, std::true_type>& kdtree ) {
+	return kdtree.radius_search(point, epsilon);
+}
 
 template<typename T, std::size_t N>
 std::vector<std::size_t> find_neighbor_indices_rtree( const Point<T, N>& point, const double epsilon, const RTree<T, N>& rtree ) {
@@ -272,7 +277,6 @@ fplus::maybe<double> compute_core_dist( const Point<T, N>& point,
 										const std::vector<std::size_t>& neighbor_indices,
 										const std::size_t min_pts ) 
 {
-
 	if ( neighbor_indices.size() < min_pts ) { return{}; }
 
 	auto core_elem_idx = fplus::nth_element_on( [&points, &point]( const std::size_t& idx ) -> double {
@@ -299,7 +303,8 @@ T pop_from_set( std::set<T>& set ) {
 template<typename T, std::size_t N>
 void update( const Point<T, N>& point, const std::vector<Point<T, N>>& points, const std::vector<std::size_t>& neighbor_indices, const double core_dist,
 				const std::vector<bool>& processed, std::vector<double>& reachability, std::set<reachability_dist>& seeds
-			) {
+			)
+{
 	for ( const auto& o : neighbor_indices ) {
 		if ( processed[o] ) { continue; }
 		double new_reachability_dist = fplus::max( core_dist, geom::dist<T,N>( point, points[o] ) );
@@ -320,18 +325,44 @@ void update( const Point<T, N>& point, const std::vector<Point<T, N>>& points, c
 }
 
 
+template<typename T, std::size_t dimension>
+std::pair<Point<T, dimension>, Point<T, dimension>> bounding_box( const std::vector<Point<T, dimension>>& points ) {
+	assert( points.size() > 0 ); //Bounding Box of 0 points not defined
+	static_assert(std::is_convertible<T, double>::value, "bounding_box(): bounding_box can only be computed for point types which can be converted to double!");
+
+	std::array<T, dimension> min( points[0] );
+	std::array<T, dimension> max( points[1] );
+
+	for ( const auto& p : points ) {
+		for ( std::size_t i = 0; i < dimension; i++ ) {
+			if ( p[i] < min[i] ) min[i] = p[i];
+			if ( p[i] > max[i] ) max[i] = p[i];
+		}
+	}
+
+	return{ {min},{ max } };
+}
+
+
+template<typename T, std::size_t dimension>
+double hypercuboid_voulume( const Point<T, dimension>& bl, const Point <T, dimension>& tr ) {
+	double volume = 1;
+	for ( std::size_t i = 0; i < dimension; i++ ) {
+		volume *= std::abs( static_cast<double>(tr[i] - bl[i]) );
+	}
+	return volume;
+}
+
 
 template<typename T, std::size_t dimension>
 double epsilon_estimation( const std::vector<Point<T, dimension>>& points, const std::size_t min_pts ){
 	static_assert(std::is_convertible<double, T>::value, "optics::epsilon_estimation: Point type 'T' must be convertible to double!");
 	static_assert(dimension >= 1, "optics::epsilon_estimation: dimension must be >=1");
-	if ( points.empty() ) { return 0; }
+	if ( points.size() <= 1 ) { return 0; }
 
 	double d = static_cast<double> (dimension);
-	auto  space = geom::bounding_box( 
-		fplus::transform( []( const Point<T, dimension>&p ) -> geom::Vec<T, dimension> {return p; }, points )
-	);
-	double space_volume = static_cast<double>(geom::product( geom::abs<T, dimension>(space.first - space.second) ));
+	auto  space = bounding_box( points );
+	double space_volume = hypercuboid_voulume( space.first, space.second );
 	
 	double space_per_minpts_points = (space_volume / static_cast<double>(points.size())) * static_cast<double>(min_pts);
 	double n_dim_unit_ball_vol = std::sqrt( std::pow( geom::pi, d ) ) / std::tgamma( d / 2.0 + 1.0 );
@@ -363,12 +394,19 @@ PointCloud<T, dimension> toPointCloud( const std::vector<Point<T, dimension>>& p
 }
 
 
-template<typename T, std::size_t dimension, std::size_t n_threads = 1>
+template<std::size_t n_points, typename T, std::size_t dimension, std::size_t n_threads = 1>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
+	
 	static_assert(n_threads >= 1, "Number of threads must be >= 1");
 	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
 	static_assert(std::is_convertible<T,double>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
 	static_assert( dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
+	static_assert(n_points > 1, "Number of points to cluster must be >= 2");
+	
+	if ( points.size() != n_points ) {
+		std::cerr << "Error: provided vector of points does not have expected length n_points";
+		std::exit(1); //points.size() must be == n_points for the kdTree
+	}
 	if ( points.empty() ) { return{}; }
 
 	if ( epsilon <= 0.0 ) {
@@ -394,7 +432,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 			fplus::transform_parallelly_n_threads(
 				n_threads,
 				[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-		{ return find_neighbor_indices_kdtree( *index, point, epsilon ); },
+		{ return find_neighbor_indices_nanoflann( *index, point, epsilon ); },
 				points
 			);
 	}
@@ -413,18 +451,20 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	}
 	else {
 		assert( method == 3 );
-		/*
-		//TODO: Get this to work:
-		const auto kd_tree = kdt::KDTree<T, dimension, n_points, 16>( points );
+		constexpr std::size_t min_points_per_node = 16;//TODO: configurable? Optimum?
+		const auto kd_tree = kdt::make_KDTree<T, dimension, n_points, min_points_per_node>( points );
 		neighbors =
 			fplus::transform_parallelly_n_threads(
 				n_threads,
 				[&kd_tree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-		{ return find_neighbor_indices_kd_tree( point, epsilon, kd_tree ); },
+					{ return find_neighbor_indices_kd_tree( point, epsilon, *kd_tree ); 
+					},
 				points
 			);
-			*/
+			
 	}
+
+	assert( neighbors.size() == points.size() );
 
 
 	for ( std::size_t point_idx = 0; point_idx < points.size(); point_idx++ ) {

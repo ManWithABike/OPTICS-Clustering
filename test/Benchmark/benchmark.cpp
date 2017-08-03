@@ -76,9 +76,12 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	auto dis = uniform_distribution<type>( 0, static_cast<type>(edge_length) );
 
 	//Create n_points random points
+
+	//std::array<std::array<type, dimension>, n_points> points;
 	std::vector<std::array<type, dimension>> points;
 	points.reserve( n_points );
-	for ( std::size_t n = 1; n <= n_points; n++ ) {
+
+	for ( std::size_t n = 0; n <= n_points - 1; n++ ) {
 		points.push_back( get_random_point<dimension, type>( dis ) );
 	}
 
@@ -86,8 +89,8 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	std::cout << std::endl << "Starting " << laps << " computations of  optics::compute_reachability_dist() ..." << std::endl;
 	sw::Stopwatch watch;
 	for ( std::size_t lap = 1; lap <= laps; lap++ ) {
-		if ( laps < 10 || (lap % (laps/10) == 0) ) std::cout << lap << "..";
-		optics::compute_reachability_dists<type, dimension, n_threads>( points, min_pts, epsilon );
+		if ( laps < 10 || (lap % (laps / 10) == 0) ) std::cout << lap << "..";
+		optics::compute_reachability_dists<n_points, type, dimension, n_threads>( points, min_pts, epsilon );
 		watch.lap();
 	}
 
@@ -95,9 +98,10 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	std::cout << std::endl;
 	std::cout << "Lap times [ms]: " << sw::show_times( elapsed.second ) << std::endl;
 	std::cout << "Total time: " << elapsed.first << "ms" << std::endl;
-	std::cout << "Mean time: " << elapsed.first/laps << "ms" << std::endl;
+	std::cout << "Mean time: " << elapsed.first / laps << "ms" << std::endl;
 
 	return elapsed.first / laps;
+
 }
 
 
