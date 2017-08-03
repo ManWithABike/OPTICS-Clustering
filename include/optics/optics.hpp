@@ -420,7 +420,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	ordered_list.reserve( points.size() );
 	std::vector<double> reachability( points.size(), -1.0f );
 	
-	int method = 0; // 0 = nanoflann, 1 = RTree, 2 = KDTree
+	int method = 2; // 0 = nanoflann, 1 = RTree, 2 = KDTree
 
 	std::vector<std::vector<std::size_t>> neighbors;
 	if ( method == 0 ) {
@@ -450,7 +450,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 			);
 	}
 	else {
-		assert( method == 3 );
+		assert( method == 2 );
 		constexpr std::size_t min_points_per_node = 16;//TODO: configurable? Optimum?
 		const auto kd_tree = kdt::make_KDTree<T, dimension, n_points, min_points_per_node>( points );
 		neighbors =

@@ -92,20 +92,23 @@ make_child( const std::array<std::array<CoordsType, dimension>, n_points>& point
 }
 */
 
-template<std::size_t N>
-constexpr std::array<std::size_t, N> indices() {
-	std::array<std::size_t, N> result;
-	for ( std::size_t i = 0; i < N; i++ ) {
-		result[i] = i;
-	}
-	return result;
-}
-
 template <typename T, std::size_t N>
 std::unique_ptr<std::array<T, N>> make_array()
 {
 	return std::make_unique<std::array<T, N>>();
 }
+
+
+
+template<std::size_t N>
+constexpr std::unique_ptr<std::array<std::size_t, N>> indices() {
+	auto result = make_array<std::size_t, N>();
+	for ( std::size_t i = 0; i < N; i++ ) {
+		(*result)[i] = i;
+	}
+	return result;
+}
+
 
 template<typename CoordsType, std::size_t dimension, std::size_t n_points, std::size_t max_points_per_node>
 std::unique_ptr<KDTree<CoordsType, dimension, n_points, n_points, max_points_per_node, 0, std::true_type>> 
@@ -121,7 +124,7 @@ make_KDTree( const std::vector<std::array<CoordsType, dimension>>& points_ )
 
 	const auto idxs = indices<n_points>();
 	std::unique_ptr<KDTree<CoordsType, dimension, n_points, n_points, max_points_per_node, 0, std::true_type>> res;
-	auto naked_ptr = new KDTree<CoordsType, dimension, n_points, n_points, max_points_per_node, 0, std::true_type>( points_, idxs );
+	auto naked_ptr = new KDTree<CoordsType, dimension, n_points, n_points, max_points_per_node, 0, std::true_type>( points_, *idxs );
 	res.reset( naked_ptr );
 	return res;
 }
@@ -157,7 +160,7 @@ public:
 	KDTree() {}
 
 private:
-	KDTree( const std::vector<Point>& points_, const std::array<std::size_t, n_points>& indices_ )
+	KDTree( const std::vector<Point>& points_, std::array<std::size_t, n_points>& indices_ )
 	{
 		if ( points_.size() != n_points_total ) {
 			std::cerr << "KDTree(): points_ does not contain n_points_total elements! Aborting";
@@ -176,41 +179,50 @@ private:
 			return points_[i1][split_dim] < points_[i2][split_dim];
 		};
 
-		auto split_index = fplus::nth_element_by(comp, n_points / 2, indices_ );
+		//auto split_index = fplus::nth_element_by(comp, n_points / 2, indices_ );
+		auto middle = std::begin( indices_ );
+		std::advance( middle, n_points / 2 );
+		std::nth_element( std::begin( indices_ ), middle, std::end( indices_ ), comp );
+		auto split_index = *middle;
 		auto split_point = points_[split_index];
 		split = split_point[split_dim];
 
-		std::array<std::size_t, n_points / 2> left_indices; //Could hold references instead of real points?
-		std::array<std::size_t, n_points - n_points / 2> right_indices;
+		auto left_indices = make_array<std::size_t, n_points/2>(); //Could hold references instead of real points?
+		auto right_indices = make_array<std::size_t, n_points - n_points / 2>();
 		std::size_t l_idx(0);
 		std::size_t r_idx(0);
 		std::vector<std::size_t> on_split_points;
 		on_split_points.reserve( 2 );
 		for (const auto& idx : indices_) {
 			auto p = points_[idx];
-			if (l_idx < left_indices.size() && p[split_dim] < split) {
-				left_indices[l_idx++] = idx;
+			if (l_idx < left_indices->size() && p[split_dim] < split) {
+				(*left_indices)[l_idx++] = idx;
 			}
 			else if ( p[split_dim] > split ){
-				right_indices[r_idx++] = idx;
+				(*right_indices)[r_idx++] = idx;
 			}
 			else{
 				on_split_points.push_back( idx );
 			}
 		}
-		assert( left_indices.size() + right_indices.size() == l_idx + r_idx + on_split_points.size() );
+		assert( left_indices->size() + right_indices->size() == l_idx + r_idx + on_split_points.size() );
 
 		for ( const auto& idx : on_split_points ) {
-			if ( l_idx < left_indices.size() ) {
-				left_indices[l_idx++] = idx;
+			if ( l_idx < left_indices->size() ) {
+				(*left_indices)[l_idx++] = idx;
 			}
 			else {
-				right_indices[r_idx++] = idx;
+				(*right_indices)[r_idx++] = idx;
 			}
 		}
 		
-		left = decltype(left)(points_, left_indices);
-		right = decltype(right)(points_, right_indices);
+		// todo: RAII?
+		LeftChild* left_ptr = new decltype(left)(points_, *left_indices); //Used to circumvent the stack, which overflows
+		left = *left_ptr;
+		delete left_ptr;
+		RightChild* right_ptr = new decltype(right)(points_, *right_indices);
+		right = *right_ptr;
+		delete right_ptr;
 	}
 
 
