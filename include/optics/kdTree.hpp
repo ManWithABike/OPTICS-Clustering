@@ -26,10 +26,15 @@ template<typename CoordsType, std::size_t dimension, std::size_t n_points_total,
 template<typename CoordsType, std::size_t dimension>
 static double square_distance( const std::array<CoordsType, dimension>& p1, const std::array<CoordsType, dimension>& p2 ) {
 	double result = 0.0;
+	//std::array<CoordsType, dimension> temp;
 	for ( std::size_t i = 0; i < dimension; i++ ) {
+		//temp[i] = (p1[i] - p2[i]);
 		double d = (p1[i] - p2[i]);
 		result +=  d*d;
 	}
+	//for ( std::size_t i = 0; i < dimension; i++ ) {
+//		result += temp[i];
+//	}
 	return result;
 }
 

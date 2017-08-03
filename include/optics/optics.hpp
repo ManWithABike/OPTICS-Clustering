@@ -451,7 +451,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	}
 	else {
 		assert( method == 2 );
-		constexpr std::size_t min_points_per_node = 16;//TODO: configurable? Optimum?
+		constexpr std::size_t min_points_per_node = 4;//TODO: configurable? Optimum?
 		const auto kd_tree = kdt::make_KDTree<T, dimension, n_points, min_points_per_node>( points );
 		neighbors =
 			fplus::transform_parallelly_n_threads(
