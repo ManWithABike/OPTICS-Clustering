@@ -62,6 +62,7 @@ double sum( const Vec<N>& x ) {
 	return sum;
 }
 
+
 template<std::size_t N>
 Vec<N> subtract( const Vec<N>& x, const Vec<N>& y ) {
 	//void add( double* result, const double* a, const double* b, size_t size )
@@ -176,7 +177,7 @@ static double square_distance( const std::array<CoordsType, dimension>& p1, cons
 	//std::array<CoordsType, dimension> temp;
 	for ( std::size_t i = 0; i < dimension; i++ ) {
 		//temp[i] = (p1[i] - p2[i]);
-		double d = (p1[i] - p2[i]);
+		const double d = (p1[i] - p2[i]);
 		result +=  d*d;
 	}
 	//for ( std::size_t i = 0; i < dimension; i++ ) {
@@ -212,7 +213,7 @@ public:
 	void radius_search_ ( const Point& p, double radius, std::vector<std::size_t>& neighbors ) const //TODO: make private & friend KDTree
 	{
 		for ( const auto& i : indices ) {
-			if ( square_distance_intrinsics( (*points)[i], p ) <= radius*radius ) {
+			if ( square_distance( (*points)[i], p ) <= radius*radius ) {
 				neighbors.push_back( i );
 			}
 		}
