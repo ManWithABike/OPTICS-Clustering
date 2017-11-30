@@ -620,11 +620,11 @@ void kdtree_tests() {
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 1 }, 1.01 );
-		exp_neighbors = { 5, 4 };
+		exp_neighbors = { 4, 5 };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 2 }, 1.01 );
-		exp_neighbors = { 5, 4, 6 };
+		exp_neighbors = { 4, 5, 6 };
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 3 }, 1.01 );
@@ -712,12 +712,12 @@ void kdtree_tests() {
 
 		neighbors = kd_tree->radius_search( { 4, 2 }, 1.01 );
 		exp_neighbors =
-		{6, 7};
+		{7, 6};
 		assert( neighbors == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 4, 1 }, 1.01 );
 		exp_neighbors =
-		{ 6, 7 };
+		{ 7, 6 };
 		assert( neighbors == exp_neighbors );
 	}
 

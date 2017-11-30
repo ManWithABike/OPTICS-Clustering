@@ -212,8 +212,9 @@ public:
 
 	void radius_search_ ( const Point& p, double radius, std::vector<std::size_t>& neighbors ) const //TODO: make private & friend KDTree
 	{
+		const double r2 = radius*radius;
 		for ( const auto& i : indices ) {
-			if ( square_distance( (*points)[i], p ) <= radius*radius ) {
+			if ( square_distance( (*points)[i], p ) <= r2 ) {
 				neighbors.push_back( i );
 			}
 		}

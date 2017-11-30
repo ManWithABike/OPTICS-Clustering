@@ -142,7 +142,7 @@ struct PointCloud {
 
 	std::vector<Point> pts;
 
-	// Must return the number of data points
+	// Returns the number of data points
 	inline size_t size() const { return pts.size(); }
 	inline size_t kdtree_get_point_count() const { return size(); }
 
