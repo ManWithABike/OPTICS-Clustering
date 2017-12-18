@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 2.8)
 project(OPTICS-Clustering)
 
 
-set(DEBUG_FLAGS "-std=c++11 -g -O1 -pthread -pedantic")
-set(RELEASE_FLAGS "-std=c++11 -O3 -pthread -pedantic")
+set(DEBUG_FLAGS "-std=c++14 -g -O1 -pthread -pedantic")
+set(RELEASE_FLAGS "-std=c++14 -O3 -pthread -pedantic")
 
 
 set(CMAKE_CXX_FLAGS ${RELEASE_FLAGS})
