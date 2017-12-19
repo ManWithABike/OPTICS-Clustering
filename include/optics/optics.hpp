@@ -9,6 +9,10 @@
 
 #ifndef _HAS_AUTO_PTR_ETC
 #define _HAS_AUTO_PTR_ETC 1
+
+#define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
@@ -396,12 +400,12 @@ PointCloud<T, dimension> toPointCloud( const std::vector<Point<T, dimension>>& p
 
 template<std::size_t n_points, typename T, std::size_t dimension, std::size_t n_threads = 1>
 std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
-	
+
 	static_assert(n_threads >= 1, "Number of threads must be >= 1");
 	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
-	static_assert(std::is_convertible<T,double>::value, "optics::compute_reachability_dists: Point type 'T' must be convertible to double!" );
-	static_assert( dimension >= 1, "optics::compute_reachability_dists: dimension must be >=1");
-	static_assert(n_points > 1, "Number of points to cluster must be >= 2");
+	static_assert(std::is_convertible<T,double>::value, "Point type 'T' must be convertible to double!" );
+	static_assert( dimension >= 1, "dimension must be >=1");
+	static_assert(n_points >= 2, "Number of points to cluster must be >= 2");
 	
 	if ( points.size() != n_points ) {
 		std::cerr << "Error: provided vector of points does not have expected length n_points";
