@@ -17,150 +17,155 @@ namespace kdt{
 template<std::size_t N>
 using Vec = std::array<double, N>;
 
-template<std::size_t N>
-double sum( const Vec<N>& x ) {
-	size_t i = 0;
-	//TODO: AVX2 loop
+/*
+namespace intrinsics {
+    
+	template<std::size_t N>
+	double sum( const Vec<N>& x ) {
+		size_t i = 0;
+		//TODO: AVX2 loop
 
-	/*
-	//TODO: replacement for _mm256_cvtsd_f64
-	//AVX loop
-	__m256d vsum0_avx = _mm256_setzero_pd();
-	__m256d vsum1_avx = _mm256_setzero_pd();
-	for ( ; i < (size & ~0x3); i += 4 )
-	{
-	__m256d v0 = _mm256_load_pd( &x[i] );
-	__m256d v1 = _mm256_load_pd( &x[i + 4] );
-	vsum0_avx = _mm256_add_pd( vsum0_avx, v0 );
-	vsum1_avx = _mm256_add_pd( vsum1_avx, v1 );
-	}
-	vsum0_avx = _mm256_add_pd( vsum0_avx, vsum1_avx );    // vertical ops down to one accumulator
-	vsum0_avx = _mm256_hadd_pd( vsum0_avx, vsum0_avx );   // horizontal add of the single register
-	double sum1 = _mm256_cvtsd_f64( vsum0_avx ); //TODO: replacement for _mm256_cvtsd_f64
-	*/
-
-	//SSE2 loop
-	__m128d vsum0 = _mm_setzero_pd();
-	__m128d vsum1 = _mm_setzero_pd();
-	for ( ; i < (N & ~0x3); i += 4 )
-	{
-		__m128d v0 = _mm_load_pd( &x[i] );
-		__m128d v1 = _mm_load_pd( &x[i + 2] );
-		vsum0 = _mm_add_pd( vsum0, v0 );
-		vsum1 = _mm_add_pd( vsum1, v1 );
-	}
-	vsum0 = _mm_add_pd( vsum0, vsum1 );    // vertical ops down to one accumulator
-	vsum0 = _mm_hadd_pd( vsum0, vsum0 );   // horizontal add of the single register
-	double sum2 = _mm_cvtsd_f64( vsum0 );
-
-	double sum = sum2; //+sum1;
-						// Serial loop
-	for ( ; i < N; i++ )
-	{
-		sum += x[i];
-	}
-	return sum;
-}
-
-
-template<std::size_t N>
-Vec<N> subtract( const Vec<N>& x, const Vec<N>& y ) {
-	//void add( double* result, const double* a, const double* b, size_t size )
-	size_t i = 0;
-	Vec<N> result;
-	// Note we are doing as many blocks of 8 as we can.  If the size is not divisible by 8
-	// then we will have some left over that will then be performed serially.
-	// AVX-512 loop
-	/*for ( ; i < (size & ~0x7); i += 8 )
-	{
-	const __m512d kA8 = _mm512_load_pd( &x[i] );
-	const __m512d kB8 = _mm512_load_pd( &y[i] );
-
-	const __m512d kRes = _mm512_add_pd( kA8, kB8 );
-	_mm512_store_pd( &result[i], kRes );
-	}*/
-
-	auto x_ptr = &x[0];
-	// AVX loop
-	for ( ; i < (N & ~0x3); i += 4 )
-	{
 		
-		const __m256d kA4 = _mm256_load_pd( &x[i] );
-		const __m256d kB4 = _mm256_load_pd( &y[i] );
+		//TODO: replacement for _mm256_cvtsd_f64
+		//AVX loop
+		//__m256d vsum0_avx = _mm256_setzero_pd();
+		//__m256d vsum1_avx = _mm256_setzero_pd();
+		//for ( ; i < (size & ~0x3); i += 4 )
+		//{
+		//__m256d v0 = _mm256_load_pd( &x[i] );
+		//__m256d v1 = _mm256_load_pd( &x[i + 4] );
+		//vsum0_avx = _mm256_add_pd( vsum0_avx, v0 );
+		//vsum1_avx = _mm256_add_pd( vsum1_avx, v1 );
+		//}
+		//vsum0_avx = _mm256_add_pd( vsum0_avx, vsum1_avx );    // vertical ops down to one accumulator
+		//vsum0_avx = _mm256_hadd_pd( vsum0_avx, vsum0_avx );   // horizontal add of the single register
+		//double sum1 = _mm256_cvtsd_f64( vsum0_avx ); //TODO: replacement for _mm256_cvtsd_f64
+		
 
-		const __m256d kRes = _mm256_sub_pd( kA4, kB4 );
-		_mm256_store_pd( &result[i], kRes );
+		//SSE2 loop
+		__m128d vsum0 = _mm_setzero_pd();
+		__m128d vsum1 = _mm_setzero_pd();
+		for ( ; i < (N & ~0x3); i += 4 )
+		{
+			__m128d v0 = _mm_load_pd( &x[i] );
+			__m128d v1 = _mm_load_pd( &x[i + 2] );
+			vsum0 = _mm_add_pd( vsum0, v0 );
+			vsum1 = _mm_add_pd( vsum1, v1 );
+		}
+		vsum0 = _mm_add_pd( vsum0, vsum1 );    // vertical ops down to one accumulator
+		vsum0 = _mm_hadd_pd( vsum0, vsum0 );   // horizontal add of the single register
+		double sum2 = _mm_cvtsd_f64( vsum0 );
+
+		double sum = sum2; //+sum1;
+							// Serial loop
+		for ( ; i < N; i++ )
+		{
+			sum += x[i];
+		}
+		return sum;
 	}
 
-	// SSE2 loop
-	for ( ; i < (N & ~0x1); i += 2 )
-	{
-		const __m128d kA2 = _mm_load_pd( &x[i] );
-		const __m128d kB2 = _mm_load_pd( &y[i] );
 
-		const __m128d kRes = _mm_sub_pd( kA2, kB2 );
-		_mm_store_pd( &result[i], kRes );
+	template<std::size_t N>
+	Vec<N> subtract( const Vec<N>& x, const Vec<N>& y ) {
+		//void add( double* result, const double* a, const double* b, size_t size )
+		size_t i = 0;
+		Vec<N> result;
+		// Note we are doing as many blocks of 8 as we can.  If the size is not divisible by 8
+		// then we will have some left over that will then be performed serially.
+		// AVX-512 loop
+		//for ( ; i < (size & ~0x7); i += 8 )
+		//{
+		//const __m512d kA8 = _mm512_load_pd( &x[i] );
+		//const __m512d kB8 = _mm512_load_pd( &y[i] );
+
+		//const __m512d kRes = _mm512_add_pd( kA8, kB8 );
+		//_mm512_store_pd( &result[i], kRes );
+		//}
+
+		auto x_ptr = &x[0];
+		// AVX loop
+		for ( ; i < (N & ~0x3); i += 4 )
+		{
+
+			const __m256d kA4 = _mm256_load_pd( &x[i] );
+			const __m256d kB4 = _mm256_load_pd( &y[i] );
+
+			const __m256d kRes = _mm256_sub_pd( kA4, kB4 );
+			_mm256_store_pd( &result[i], kRes );
+		}
+
+		// SSE2 loop
+		for ( ; i < (N & ~0x1); i += 2 )
+		{
+			const __m128d kA2 = _mm_load_pd( &x[i] );
+			const __m128d kB2 = _mm_load_pd( &y[i] );
+
+			const __m128d kRes = _mm_sub_pd( kA2, kB2 );
+			_mm_store_pd( &result[i], kRes );
+		}
+
+		// Serial loop
+		for ( ; i < N; i++ )
+		{
+			result[i] = x[i] - y[i];
+		}
+		return result;
 	}
 
-	// Serial loop
-	for ( ; i < N; i++ )
-	{
-		result[i] = x[i] - y[i];
+
+	template<std::size_t N>
+	Vec<N> product( const Vec<N>& x, const Vec<N>& y ) {
+		size_t i( 0 );
+		Vec<N> result;
+
+		// Note we are doing as many blocks of 8 as we can.  If the size is not divisible by 8
+		// then we will have some left over that will then be performed serially.
+		// AVX-512 loop
+		//for ( ; i < (size & ~0x7); i += 8 )
+		//{
+		//const __m512d kA8 = _mm512_load_pd( &x[i] );
+		//const __m512d kB8 = _mm512_load_pd( &y[i] );
+
+		//const __m512d kRes = _mm512_mul_pd( kA8, kB8 );
+		//_mm512_store_pd( &result[i], kRes );
+		//}
+
+		for ( ; i < (N & ~0x3); i += 4 )
+		{
+			const __m256d kX4 = _mm256_load_pd( &x[i] );
+			const __m256d kY4 = _mm256_load_pd( &y[i] );
+
+			const __m256d kRes = _mm256_mul_pd( kX4, kY4 );
+			_mm256_store_pd( &result[i], kRes );
+		}
+
+		// SSE2 loop
+		for ( ; i < (N & ~0x1); i += 2 )
+		{
+			const __m128d kX2 = _mm_load_pd( &x[i] );
+			const __m128d kY2 = _mm_load_pd( &y[i] );
+
+			const __m128d kRes = _mm_mul_pd( kX2, kY2 );
+			_mm_store_pd( &result[i], kRes );
+		}
+
+		// Serial loop
+		for ( ; i < N; i++ )
+		{
+			result[i] = x[i] * y[i];
+		}
+		return result;
 	}
-	return result;
-}
 
 
-template<std::size_t N>
-Vec<N> product( const Vec<N>& x, const Vec<N>& y ) {
-	size_t i( 0 );
-	Vec<N> result;
-
-	// Note we are doing as many blocks of 8 as we can.  If the size is not divisible by 8
-	// then we will have some left over that will then be performed serially.
-	// AVX-512 loop
-	/*for ( ; i < (size & ~0x7); i += 8 )
-	{
-	const __m512d kA8 = _mm512_load_pd( &x[i] );
-	const __m512d kB8 = _mm512_load_pd( &y[i] );
-
-	const __m512d kRes = _mm512_mul_pd( kA8, kB8 );
-	_mm512_store_pd( &result[i], kRes );
-	}*/
-
-	for ( ; i < (N & ~0x3); i += 4 )
-	{
-		const __m256d kX4 = _mm256_load_pd( &x[i] );
-		const __m256d kY4 = _mm256_load_pd( &y[i] );
-
-		const __m256d kRes = _mm256_mul_pd( kX4, kY4 );
-		_mm256_store_pd( &result[i], kRes );
+	template<std::size_t N>
+	__declspec(noinline) double square_distance_intrinsics( const Vec<N>& x, const Vec<N>& y ) {
+		auto diff = subtract( x, y );
+		return sum( product( diff, diff ) );
 	}
-
-	// SSE2 loop
-	for ( ; i < (N & ~0x1); i += 2 )
-	{
-		const __m128d kX2 = _mm_load_pd( &x[i] );
-		const __m128d kY2 = _mm_load_pd( &y[i] );
-
-		const __m128d kRes = _mm_mul_pd( kX2, kY2 );
-		_mm_store_pd( &result[i], kRes );
-	}
-
-	// Serial loop
-	for ( ; i < N; i++ )
-	{
-		result[i] = x[i] * y[i];
-	}
-	return result;
-}
-
-
-template<std::size_t N>
-__declspec(noinline) double square_distance_intrinsics( const Vec<N>& x, const Vec<N>& y ) {
-	auto diff = subtract( x, y );
-	return sum( product( diff, diff ) );
-}
+    
+} *///namespace instrinsics
 
 
 constexpr bool is_powerof2(std::size_t v) {
