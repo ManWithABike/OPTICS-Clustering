@@ -61,14 +61,6 @@ matrix:
             - clang-3.7
           sources: *sources
       env: COMPILER=clang++-3.7
-      
-    - compiler: clang
-      addons:
-        apt:
-          packages:
-            - clang-3.6
-          sources: *sources
-      env: COMPILER=clang++-3.6
 
 before_install:
     - sudo apt-get update -qq

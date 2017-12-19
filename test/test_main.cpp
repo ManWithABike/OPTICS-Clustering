@@ -605,35 +605,35 @@ void kdtree_tests() {
 
 		auto neighbors = kd_tree->radius_search( { -4 }, 1.01 );
 		std::vector<std::size_t> exp_neighbors{ 0, 1 };
-		assert( neighbors == exp_neighbors );
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { -3 }, 1.01 );
 		exp_neighbors = { 0, 1, 2 };
-		assert( neighbors == exp_neighbors );
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { -2 }, 1.01 );
-		exp_neighbors = { 1, 3, 2 };
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = { 1, 2, 3 };
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { -1 }, 1.01 );
-		exp_neighbors = { 3, 2 };
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = { 2, 3 };
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 1 }, 1.01 );
 		exp_neighbors = { 4, 5 };
-		assert( neighbors == exp_neighbors );
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 2 }, 1.01 );
 		exp_neighbors = { 4, 5, 6 };
-		assert( neighbors == exp_neighbors );
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 3 }, 1.01 );
-		exp_neighbors = { 5, 7, 6 };
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = { 5, 6, 7 };
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 4 }, 1.01 );
-		exp_neighbors = { 7, 6 };
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = { 6, 7 };
+		assert( fplus::sort(neighbors) == exp_neighbors );
 	}
 
 	{
@@ -653,11 +653,8 @@ void kdtree_tests() {
 		auto kd_tree = kdt::make_KDTree<T, dim, n_pts, max_pts>( points );
 
 		auto neighbors = kd_tree->radius_search( { 0 }, 1.01 );
-		std::vector<std::size_t> exp_neighbors
-		{
-			{ 0, 1, 2, 3 }
-		};
-		assert( neighbors == exp_neighbors );
+		std::vector<std::size_t> exp_neighbors { { 0, 1, 2, 3 } };
+		assert( fplus::sort(neighbors) == exp_neighbors );
 	}
 
 	{
@@ -680,45 +677,36 @@ void kdtree_tests() {
 
 		auto neighbors = kd_tree->radius_search( { 0, 10 }, 1.01 );
 		std::vector<std::size_t> exp_neighbors
-		{ 0, 1 };
-		assert( neighbors == exp_neighbors );
+		{0, 1};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 0, 9 }, 1.01 );
-		exp_neighbors =
-		{
-			2, 0, 1 
-		};
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = {0, 1, 2};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 0, 8 }, 1.01 );
-		exp_neighbors =
-		{ 2, 1 };
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = {1, 2};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 2, 6 }, 1.01 );
-		exp_neighbors =
-		{3, 4};
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = {3, 4};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 2, 5 }, 1.01 );
-		exp_neighbors =
-		{3,4,5};
-		assert( neighbors == exp_neighbors );
+		exp_neighbors =	{3, 4, 5};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 2, 4 }, 1.01 );
-		exp_neighbors =
-		{4, 5};
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = {4, 5};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 4, 2 }, 1.01 );
-		exp_neighbors =
-		{7, 6};
-		assert( neighbors == exp_neighbors );
+		exp_neighbors = {6, 7};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 
 		neighbors = kd_tree->radius_search( { 4, 1 }, 1.01 );
-		exp_neighbors =
-		{ 7, 6 };
-		assert( neighbors == exp_neighbors );
+		exp_neighbors =	{6, 7};
+		assert( fplus::sort(neighbors) == exp_neighbors );
 	}
 
 	std::cout << "KDTree tests successful!" << std::endl;
