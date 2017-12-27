@@ -57,9 +57,9 @@ using Point = std::array<T, dimension>;
 struct reachability_dist {
 	reachability_dist( std::size_t point_index_, double reach_dist_ ) : point_index( point_index_ ), reach_dist( reach_dist_ ) {}
 
-    std::string to_string() const{
-        return "{" + std::to_string(point_index) + "," + std::to_string( reach_dist ) +"}";
-    }
+	std::string to_string() const{
+		return "{" + std::to_string(point_index) + "," + std::to_string( reach_dist ) +"}";
+	}
 	std::size_t point_index;
 	double reach_dist;
 };
@@ -178,14 +178,14 @@ struct PointCloud {
 
 
 template<typename T, std::size_t dimension>
-using my_kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+using nanoflann_tree = nanoflann::KDTreeSingleIndexAdaptor<
 	nanoflann::L2_Simple_Adaptor<T, PointCloud<T, dimension>>,
 	PointCloud<T, dimension>,
 	dimension>;
 
 template<typename T, std::size_t dimension>
-std::shared_ptr<my_kd_tree_t<T, dimension>> create_kd_tree( const PointCloud<T, dimension>& cloud ) {
-	auto index = std::make_shared<my_kd_tree_t<T, dimension>>( dimension,
+std::shared_ptr<nanoflann_tree<T, dimension>> create_nanoflann_tree( const PointCloud<T, dimension>& cloud ) {
+	auto index = std::make_shared<nanoflann_tree<T, dimension>>( dimension,
 															   cloud,
 															   nanoflann::KDTreeSingleIndexAdaptorParams( 10 ) );
 	index->buildIndex();
@@ -195,7 +195,7 @@ std::shared_ptr<my_kd_tree_t<T, dimension>> create_kd_tree( const PointCloud<T, 
 
 
 template<typename T, std::size_t dimension>
-std::vector<std::size_t> find_neighbor_indices_nanoflann( const my_kd_tree_t<T, dimension>& index,
+std::vector<std::size_t> find_neighbor_indices_nanoflann( std::shared_ptr<nanoflann_tree<T, dimension>> index,
 												 const Point<T, dimension>& point,
 												 double epsilon ) {
 	const double search_radius = epsilon;
@@ -204,7 +204,7 @@ std::vector<std::size_t> find_neighbor_indices_nanoflann( const my_kd_tree_t<T, 
 	nanoflann::SearchParams params;
 	//params.sorted = false;
 
-	const size_t nMatches = index.radiusSearch( &point[0], search_radius, ret_matches, params );
+	const size_t nMatches = index->radiusSearch( &point[0], search_radius, ret_matches, params );
 
 	std::vector<std::size_t> result;
 	result.reserve( nMatches );
@@ -436,13 +436,13 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	if ( method == 0 ) {
 		//nanoflann
 		const PointCloud<T, dimension> cloud = toPointCloud( points );
-		auto index = create_kd_tree( cloud );
+		auto index = create_nanoflann_tree( cloud );
 
 		neighbors =
 			fplus::transform_parallelly_n_threads(
 				n_threads,
 				[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-		{ return find_neighbor_indices_nanoflann( *index, point, epsilon ); },
+		{ return find_neighbor_indices_nanoflann( index, point, epsilon ); },
 				points
 			);
 	}
@@ -594,10 +594,10 @@ inline bgr_image draw_reachability_plot( const std::vector<reachability_dist>& r
 
 	//Drawing the graph
 	for ( int i = 0; i < static_cast<int>(reach_dists.size())-1; i++ ) {
-        int x1 = fplus::round( (image.size().width_-1) * i/ static_cast<double>((reach_dists_values.size()-1)) );
-        int y1 = static_cast<int>(image.size().height_) -1 - (reach_dists_values[i] < 0 ? no_dist : fplus::round( reach_dists_values[i]));
-        int x2 = fplus::round( (static_cast<double>(image.size().width_)-1) * (i+1)/static_cast<double>((reach_dists_values.size()-1)) );
-        int y2 = static_cast<int>(image.size().height_) -1 - (reach_dists_values[i+1] < 0 ? no_dist : fplus::round( reach_dists_values[i+1]));
+		int x1 = fplus::round( (image.size().width_-1) * i/ static_cast<double>((reach_dists_values.size()-1)) );
+		int y1 = static_cast<int>(image.size().height_) -1 - (reach_dists_values[i] < 0 ? no_dist : fplus::round( reach_dists_values[i]));
+		int x2 = fplus::round( (static_cast<double>(image.size().width_)-1) * (i+1)/static_cast<double>((reach_dists_values.size()-1)) );
+		int y2 = static_cast<int>(image.size().height_) -1 - (reach_dists_values[i+1] < 0 ? no_dist : fplus::round( reach_dists_values[i+1]));
 		plot_line_segment( image, img_pos(x1, y1), img_pos(x2, y2), bgr_col(30,30,30) );
 		bgr_col col = reach_dists_values[i] < 0 ? bgr_col(0, 0, 255) : bgr_col(0, 255, 0);
 		plot_pixel( image, img_pos( x1, y1 ), col );
@@ -637,8 +637,8 @@ inline std::vector<std::vector<std::size_t>> get_cluster_indices( const std::vec
 			result.back().push_back( r.point_index );
 		}
 	}
-    if( reachability_plot_image_path!= ""){
-        auto img = draw_reachability_plot( reach_dists);
+	if( reachability_plot_image_path!= ""){
+		auto img = draw_reachability_plot( reach_dists);
 		img.save( reachability_plot_image_path );
 	}
 	return result;
@@ -646,18 +646,18 @@ inline std::vector<std::vector<std::size_t>> get_cluster_indices( const std::vec
 
 template<typename T, std::size_t dimension>
 std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
-            const std::vector<reachability_dist>& reach_dists,
-            double reachability_threshold,
-            const std::vector<std::array<T, dimension>>& points,
-            const std::string& reachability_plot_image_path = "" )
+			const std::vector<reachability_dist>& reach_dists,
+			double reachability_threshold,
+			const std::vector<std::array<T, dimension>>& points,
+			const std::string& reachability_plot_image_path = "" )
 {
 	const auto sorted_reachdist_indices =
-        fplus::unique(
-            fplus::sort_on(
-                []( const reachability_dist& r )->std::size_t { return r.point_index; },
-                reach_dists
-            )
-        );
+		fplus::unique(
+			fplus::sort_on(
+				[]( const reachability_dist& r )->std::size_t { return r.point_index; },
+				reach_dists
+			)
+		);
 	assert( sorted_reachdist_indices.size() == points.size() );
 	assert( sorted_reachdist_indices.back().point_index == points.size() - 1 );
 
@@ -669,7 +669,7 @@ std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
 	}
 
 	if( reachability_plot_image_path!= ""){
-        auto img = draw_reachability_plot( reach_dists);
+		auto img = draw_reachability_plot( reach_dists);
 		img.save( reachability_plot_image_path );
 	}
 	return result;
@@ -732,10 +732,10 @@ std::vector<std::vector<std::array<T, dimension>>> get_cluster_points(
 
 template<typename T, std::size_t dimension>
 std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
-        const std::vector<reachability_dist>& reach_dists,
-        double reachability_threshold,
-        const std::vector<geom::Vec<T, dimension>>& points ,
-        const std::string& reachability_plot_image_path = "" )
+		const std::vector<reachability_dist>& reach_dists,
+		double reachability_threshold,
+		const std::vector<geom::Vec<T, dimension>>& points ,
+		const std::string& reachability_plot_image_path = "" )
 {
 	const auto sorted_reachdists = fplus::unique( fplus::sort( reach_dists ) );//TODO: Debug raus
 	assert( sorted_reachdists.size() == points.size() );
@@ -748,7 +748,7 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
 		result.push_back( fplus::elems_at_idxs( cluster_indices, points ) );
 	}
 	if( reachability_plot_image_path!= ""){
-        auto img = draw_reachability_plot( reach_dists );
+		auto img = draw_reachability_plot( reach_dists );
 		img.save( reachability_plot_image_path );
 	}
 	return result;
@@ -756,10 +756,10 @@ std::vector<std::vector<geom::Vec<T, dimension>>> get_cluster_points(
 
 
 struct SDA{
-    SDA( std::size_t begin_idx_, std::size_t end_idx_, double mib_) : begin_idx(begin_idx_), end_idx(end_idx_), mib(mib_){}
-    std::size_t begin_idx;
-    std::size_t end_idx;
-    double mib;
+	SDA( std::size_t begin_idx_, std::size_t end_idx_, double mib_) : begin_idx(begin_idx_), end_idx(end_idx_), mib(mib_){}
+	std::size_t begin_idx;
+	std::size_t end_idx;
+	double mib;
 };
 
 
@@ -767,49 +767,49 @@ struct SDA{
 
 
 inline std::vector<chi_cluster_indices> get_chi_clusters_flat( const std::vector<reachability_dist>& reach_dists_, const double chi, std::size_t min_pts, double steep_area_min_diff = 0.0 ){
-    std::vector<std::pair<std::size_t, std::size_t>> clusters;
-    std::vector<SDA> SDAs;
-    const std::size_t n_reachdists = reach_dists_.size();
-    double mib(0);
-    double max_reach(0.0);
+	std::vector<std::pair<std::size_t, std::size_t>> clusters;
+	std::vector<SDA> SDAs;
+	const std::size_t n_reachdists = reach_dists_.size();
+	double mib(0);
+	double max_reach(0.0);
 	for( const auto& r :reach_dists_ ){ if( r.reach_dist > max_reach ) max_reach = r.reach_dist; }
 
 
-    const auto get_reach_dist = [&reach_dists_, &max_reach](const std::size_t idx) -> double{
-        assert( idx <= reach_dists_.size() );
-        if( idx == reach_dists_.size() ) return max_reach;
+	const auto get_reach_dist = [&reach_dists_, &max_reach](const std::size_t idx) -> double{
+		assert( idx <= reach_dists_.size() );
+		if( idx == reach_dists_.size() ) return max_reach;
 		if( idx == 0 ) return max_reach;
 		const auto r = reach_dists_[idx].reach_dist;
-        return ((r<0) ? 2*max_reach : r);
-    };
-    const auto is_steep_down_pt = [&get_reach_dist, &n_reachdists, &chi](std::size_t idx ){
-        if( idx == 0 ) return true;
-        if( idx+1 >= n_reachdists ) return false;
-        return get_reach_dist(idx+1) <= get_reach_dist(idx) * (1-chi);
-    };
-    const auto is_steep_up_pt = [&get_reach_dist, &n_reachdists, &chi](std::size_t idx ){
-        if( idx+1 >= n_reachdists ) return true;
-        return get_reach_dist(idx+1) * (1-chi) >= get_reach_dist(idx);
-    };
-    const auto filter_sdas = [&chi, &steep_area_min_diff, &SDAs, &mib, &get_reach_dist](){
-        SDAs = fplus::keep_if( [&mib, &chi, &steep_area_min_diff, &get_reach_dist](const SDA& sda)->bool{
+		return ((r<0) ? 2*max_reach : r);
+	};
+	const auto is_steep_down_pt = [&get_reach_dist, &n_reachdists, &chi](std::size_t idx ){
+		if( idx == 0 ) return true;
+		if( idx+1 >= n_reachdists ) return false;
+		return get_reach_dist(idx+1) <= get_reach_dist(idx) * (1-chi);
+	};
+	const auto is_steep_up_pt = [&get_reach_dist, &n_reachdists, &chi](std::size_t idx ){
+		if( idx+1 >= n_reachdists ) return true;
+		return get_reach_dist(idx+1) * (1-chi) >= get_reach_dist(idx);
+	};
+	const auto filter_sdas = [&chi, &steep_area_min_diff, &SDAs, &mib, &get_reach_dist](){
+		SDAs = fplus::keep_if( [&mib, &chi, &steep_area_min_diff, &get_reach_dist](const SDA& sda)->bool{
 					const double f = fplus::max( chi, steep_area_min_diff );
-                    return mib <= get_reach_dist(sda.begin_idx) * (1-f);
-            }, SDAs);
+					return mib <= get_reach_dist(sda.begin_idx) * (1-f);
+			}, SDAs);
 		for ( auto& sda : SDAs ) {
 			sda.mib = std::max( sda.mib, mib );
 		}
-    };
-    const auto get_sda_end = [&chi, &n_reachdists, &get_reach_dist, &min_pts, &is_steep_down_pt]( const std::size_t start_idx ) -> std::size_t{
-        assert( is_steep_down_pt(start_idx) );
-        std::size_t last_sd_idx = start_idx;
-        std::size_t idx = start_idx +1;
-        while( idx < n_reachdists ){
-            if( idx - last_sd_idx >= min_pts){ return last_sd_idx; }
-            if( get_reach_dist(idx) > get_reach_dist(idx-1) ){ return last_sd_idx; }
-            if( is_steep_down_pt(idx) ){ last_sd_idx = idx; }
-            idx++;
-        }
+	};
+	const auto get_sda_end = [&chi, &n_reachdists, &get_reach_dist, &min_pts, &is_steep_down_pt]( const std::size_t start_idx ) -> std::size_t{
+		assert( is_steep_down_pt(start_idx) );
+		std::size_t last_sd_idx = start_idx;
+		std::size_t idx = start_idx +1;
+		while( idx < n_reachdists ){
+			if( idx - last_sd_idx >= min_pts){ return last_sd_idx; }
+			if( get_reach_dist(idx) > get_reach_dist(idx-1) ){ return last_sd_idx; }
+			if( is_steep_down_pt(idx) ){ last_sd_idx = idx; }
+			idx++;
+		}
 		return std::max( n_reachdists - 2, last_sd_idx);
 	};
 	const auto get_sua_end = [&chi, &n_reachdists, &get_reach_dist, &min_pts, &is_steep_up_pt]( const std::size_t start_idx ) -> std::size_t {
@@ -1020,7 +1020,7 @@ bgr_image draw_2d_clusters( const std::vector<std::vector<geom::Vec<T,2>>>& clus
 		++col_idx %= colours.size();
 		auto cluster_box = geom2d::bounding_box( cluster );
 		for( const auto& edge: fplus::overlapping_pairs_cyclic(cluster_box.points()) ){
-            plot_line_segment( cluster_image,
+			plot_line_segment( cluster_image,
 							   img_pos( fplus::round<double, std::size_t>(edge.first.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.first.y() - box.bl().y() )),
 							   img_pos( fplus::round<double, std::size_t>( edge.second.x() - box.bl().x() ), fplus::round<double, std::size_t>( edge.second.y() - box.bl().y() ) ),
 							   col );
