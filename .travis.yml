@@ -20,39 +20,7 @@ matrix:
             - llvm-toolchain-precise-4
             - llvm-toolchain-precise-5
       env: COMPILER=g++-6
-     
-     - compiler: gcc
-        addons:
-          apt:
-            packages:
-            - g++-7
-            sources: *sources
-      env: COMPILER=g++-7
-
-      - compiler: gcc
-        addons:
-          apt:
-            packages:
-            - g++-7.2
-            sources: *sources
-      env: COMPILER=g++-7.2
-
-     - compiler: gcc
-        addons:
-          apt:
-            packages:
-            - g++-6.4
-            sources: *sources
-      env: COMPILER=g++-6.4
-
-     - compiler: gcc
-        addons:
-          apt:
-            packages:
-            - g++-5.5
-            sources: *sources
-      env: COMPILER=g++-5.5
-
+      
     - compiler: gcc
       addons:
         apt:
@@ -61,6 +29,14 @@ matrix:
           sources: *sources
       env: COMPILER=g++-5
     
+    - compiler: gcc
+      addons:
+        apt:
+          packages:
+            - g++-4.9
+          sources: *sources
+      env: COMPILER=g++-4.9
+    
     - compiler: clang
       addons:
         apt:
@@ -68,7 +44,7 @@ matrix:
             - clang-3.9
           sources: *sources
       env: COMPILER=clang++-3.9
-
+      
     - compiler: clang
       addons:
         apt:
@@ -76,16 +52,14 @@ matrix:
             - clang-4
           sources: *sources
       env: COMPILER=clang++-4
-
-    - compiler: clang
+      
+    - compiler: clang 
       addons:
         apt:
           packages:
             - clang-5
           sources: *sources
       env: COMPILER=clang++-5
-      
-
 
 before_install:
     - sudo apt-get update -qq
