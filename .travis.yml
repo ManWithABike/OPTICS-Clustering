@@ -18,17 +18,8 @@ matrix:
             - llvm-toolchain-precise
             - llvm-toolchain-precise-3.8
             - llvm-toolchain-precise-3.9
-            - llvm-toolchain-precise-4
-            - llvm-toolchain-precise-5
+			- llvm-toolchain-trusty-4.0
       env: COMPILER=g++-6
-
-    - compiler: gcc
-      addons:
-        apt:
-          packages:
-            - g++-6.4
-          sources: *sources
-      env: COMPILER=g++-6.4
 
     - compiler: gcc
       addons:
@@ -37,14 +28,6 @@ matrix:
             - g++-5
           sources: *sources
       env: COMPILER=g++-5
-
-    - compiler: gcc
-      addons:
-        apt:
-          packages:
-            - g++-5.5
-          sources: *sources
-      env: COMPILER=g++-5.5
 
 #    - compiler: gcc
 #      addons:
@@ -66,17 +49,17 @@ matrix:
       addons:
         apt:
           packages:
-            - g++-4.9.4
+            - g++-4.9
           sources: *sources
-      env: COMPILER=g++-4.9.4
+      env: COMPILER=g++-4.9
     
-#    - compiler: clang
-#      addons:
-#        apt:
-#          packages:
-#            - clang-3.8
-#          sources: *sources
-#      env: COMPILER=clang++-3.8
+    - compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-3.8
+          sources: *sources
+      env: COMPILER=clang++-3.8
 
     - compiler: clang
       addons:
