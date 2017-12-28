@@ -195,9 +195,11 @@ std::shared_ptr<nanoflann_tree<T, dimension>> create_nanoflann_tree( const Point
 
 
 template<typename T, std::size_t dimension>
-std::vector<std::size_t> find_neighbor_indices_nanoflann( std::shared_ptr<nanoflann_tree<T, dimension>> index,
-												 const Point<T, dimension>& point,
-												 double epsilon ) {
+std::vector<std::size_t> find_neighbor_indices_nanoflann(
+	std::shared_ptr<nanoflann_tree<T, dimension>> index,
+	const Point<T, dimension>& point,
+	double epsilon
+){
 	const double search_radius = epsilon;
 	std::vector<std::pair<std::size_t, double>> ret_matches;
 
@@ -436,7 +438,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	if ( method == 0 ) {
 		//nanoflann
 		const PointCloud<T, dimension> cloud = toPointCloud( points );
-		auto index = create_nanoflann_tree( cloud );
+		auto index = create_nanoflann_tree<T, dimension>( cloud );
 
 		neighbors =
 			fplus::transform_parallelly_n_threads(
