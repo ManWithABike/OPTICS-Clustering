@@ -444,7 +444,7 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 			fplus::transform_parallelly_n_threads(
 				n_threads,
 				[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-		{ return find_neighbor_indices_nanoflann( index, point, epsilon ); },
+		{ return find_neighbor_indices_nanoflann<T,dimension>( index, point, epsilon ); },
 				points
 			);
 	}
