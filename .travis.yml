@@ -84,14 +84,14 @@ before_install:
       if [ -n "$CLANG_VERSION" ]; then
         export CXX="clang++-${CLANG_VERSION}" CC="clang-${CLANG_VERSION}"
       fi
-      if [ "$LIBCXX" == "On" ]; then
-        sudo apt-get purge cmake
-        sudo apt-get install cmake3
-        cmake --version
-        sudo CXX="$CXX" CC="$CC"
-        sudo ./cmake/install_libcxx.sh
-        export CXXFLAGS="-stdlib=libc++"
-      fi
+#      if [ "$LIBCXX" == "On" ]; then
+#        sudo apt-get purge cmake
+#        sudo apt-get install cmake3
+#        cmake --version
+#        sudo CXX="$CXX" CC="$CC"
+#        sudo ./cmake/install_libcxx.sh
+#        export CXXFLAGS="-stdlib=libc++"
+#      fi
 
     - sudo apt-get update -qq
     - sudo apt-get install libboost-dev
