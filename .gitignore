@@ -55,3 +55,6 @@ dependencies
 !*/Opencv_ClusterImage_Test/ClusterImage_*.ppm
 *test.cpp*
 
+#Stuff
+*.ods#
+

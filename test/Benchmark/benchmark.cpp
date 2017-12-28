@@ -62,6 +62,7 @@ void eps_guess( double space_volume, std::size_t n_points, std::size_t dim ) {
 template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type, std::size_t laps, std::size_t n_threads = 1>
 std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	static_assert(dimension > 0, "Dimension must be >0");
+	static_assert(space_volume > 0, "Volume must be >0");
 
 	//Space parameters
 	double edge_length = std::pow( static_cast<double>(space_volume), 1.0 / static_cast<double>(dimension) );
@@ -71,16 +72,11 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	eps_guess( static_cast<double>(space_volume), n_points, dimension );
 
 	//Create a distribution that outputs coordinates between 0 and edge_length
-
-	//std::uniform_real_distribution<type> dis( 0, edge_length );
 	auto dis = uniform_distribution<type>( 0, static_cast<type>(edge_length) );
 
 	//Create n_points random points
-
-	//std::array<std::array<type, dimension>, n_points> points;
 	std::vector<std::array<type, dimension>> points;
 	points.reserve( n_points );
-
 	for ( std::size_t n = 0; n <= n_points - 1; n++ ) {
 		points.push_back( get_random_point<dimension, type>( dis ) );
 	}
@@ -120,9 +116,15 @@ int main() {
 	std::cout << std::endl << "--- 6 dim ---" << std::endl;
 	test<100000, 6, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 10 dim ---" << std::endl;
-	test<100000, 10, 100 * 100, double, 3, 1>( 10 );
+	test<10000, 10, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 20 dim ---" << std::endl;
 	test<10000, 20, 100 * 100, double, 5, 1>( 10 );
+	std::cout << std::endl << "--- 64 dim ---" << std::endl;
+	test<1000, 64, 100 * 100, double, 5, 1>( 10 );
+	std::cout << std::endl << "--- 128 dim ---" << std::endl;
+	test<1000, 128, 100 * 100, double, 5, 1>( 10 );
+	std::cout << std::endl << "--- 512 dim ---" << std::endl;
+	test<1000, 512, 100 * 100, double, 5, 1>( 10 );
 
 	return 0;
 
