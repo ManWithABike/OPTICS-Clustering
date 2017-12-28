@@ -440,39 +440,68 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 		const PointCloud<T, dimension> cloud = toPointCloud( points );
 		auto index = create_nanoflann_tree<T, dimension>( cloud );
 
-		neighbors =
-			fplus::transform_parallelly_n_threads(
-				n_threads,
+		if ( n_threads == 1 ) {
+			neighbors = fplus::transform(
 				[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-		{ return find_neighbor_indices_nanoflann<T,dimension>( index, point, epsilon ); },
+			{ return find_neighbor_indices_nanoflann<T, dimension>( index, point, epsilon ); },
 				points
 			);
+		}
+		else {
+			neighbors =
+				fplus::transform_parallelly_n_threads(
+					n_threads,
+					[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+			{ return find_neighbor_indices_nanoflann<T, dimension>( index, point, epsilon ); },
+					points
+				);
+		}
 	}
 	else if ( method == 1 ){
 		//RTree
 		const auto rtree = initialize_rtree( points );
 
 		//Compute all neighbors parallely beforehand
-		neighbors =
-			fplus::transform_parallelly_n_threads(
-				n_threads,
+
+		if ( n_threads == 1 ) {
+			neighbors = fplus::transform(
 				[&rtree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-		{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
+			{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
 				points
 			);
+		}
+		else {
+			neighbors =
+				fplus::transform_parallelly_n_threads(
+					n_threads,
+					[&rtree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+			{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
+					points
+				);
+		}
 	}
 	else {
 		assert( method == 2 );
 		constexpr std::size_t min_points_per_node = 4;//TODO: configurable? Optimum?
 		const auto kd_tree = kdt::make_KDTree<T, dimension, n_points, min_points_per_node>( points );
-		neighbors =
-			fplus::transform_parallelly_n_threads(
-				n_threads,
+		
+		if ( n_threads == 1 ) {
+			neighbors = fplus::transform(
 				[&kd_tree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
-					{ return find_neighbor_indices_kd_tree( point, epsilon, *kd_tree ); 
-					},
-				points
+			{ return find_neighbor_indices_kd_tree( point, epsilon, *kd_tree );
+			}, points
 			);
+		}
+		else {
+			neighbors =
+				fplus::transform_parallelly_n_threads(
+					n_threads,
+					[&kd_tree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+			{ return find_neighbor_indices_kd_tree( point, epsilon, *kd_tree );
+			},
+					points
+				);
+		}
 			
 	}
 
