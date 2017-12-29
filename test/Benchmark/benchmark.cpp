@@ -59,11 +59,12 @@ void eps_guess( double space_volume, std::size_t n_points, std::size_t dim ) {
 }
 
 
-template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type, std::size_t laps, std::size_t n_threads = 1>
-std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
+template<std::size_t n_points, std::size_t dimension, std::uint64_t space_volume, typename type, std::size_t laps, std::size_t min_pts, std::size_t n_threads>
+std::uint64_t test( std::ofstream& output, double epsilon = -1.0 ) {
 	static_assert(dimension > 0, "Dimension must be >0");
 	static_assert(space_volume > 0, "Volume must be >0");
 
+	std::cout << "\n\nDims = " << dimension << " n_points = " << n_points << " min_pts = " << min_pts  << std::endl;
 	//Space parameters
 	double edge_length = std::pow( static_cast<double>(space_volume), 1.0 / static_cast<double>(dimension) );
 	std::cout << "Space volume: " << space_volume << std::endl;
@@ -96,18 +97,142 @@ std::uint64_t test( std::size_t min_pts, double epsilon = -1.0 ) {
 	std::cout << "Total time: " << elapsed.first << "ms" << std::endl;
 	std::cout << "Mean time: " << elapsed.first / laps << "ms" << std::endl;
 
-	return elapsed.first / laps;
-
+	auto result = elapsed.first / laps;
+	output << dimension << ";" << n_points << ";" << space_volume << ";" << min_pts << ";" << result << std::endl;
+	return result;
 }
+
+
+
+constexpr std::array<std::size_t, 27> dimensions = { 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 25, 30, 32, 50, 64, 65, 100, 128, 129, 256, 257, 512,513, 1024, 1025  };
+
+int test_all() {
+	std::ofstream output;
+	output.open( "benchmark.csv" );
+	output << "dimension;n_points;volume;min_clustersize;time" << std::endl;
+
+	//dim = 1
+	{
+		//n_pts = 1000
+	   test<1000, 1, 1, double, 2, 10, 1>( output );
+	   test<1000, 1, 1, double, 2, 20, 1>( output );
+	   test<1000, 1, 1, double, 2, 50, 1>( output );
+	   test<1000, 1, 1, double, 2, 100, 1>( output );
+		//n_pts = 5000
+	   test<5000, 1, 1, double, 2, 10, 1>( output );
+	   test<5000, 1, 1, double, 2, 20, 1>( output );
+	   test<5000, 1, 1, double, 2, 50, 1>( output );
+	   test<5000, 1, 1, double, 2, 100, 1>( output );
+		//n_pts = 10000
+	   test<10000, 1, 1, double, 2, 10, 1>( output );
+	   test<10000, 1, 1, double, 2, 20, 1>( output );
+	   test<10000, 1, 1, double, 2, 50, 1>( output );
+	   test<10000, 1, 1, double, 2, 100, 1>( output );
+		//n_pts = 50000
+	   test<50000, 1, 1, double, 2, 10, 1>( output );
+	   test<50000, 1, 1, double, 2, 20, 1>( output );
+	   test<50000, 1, 1, double, 2, 50, 1>( output );
+	   test<50000, 1, 1, double, 2, 100, 1>( output );
+	   test<50000, 1, 1, double, 2, 500, 1>( output );
+		//n_pts = 100000
+	   test<100000, 1, 1, double, 2, 10, 1>( output );
+	   test<100000, 1, 1, double, 2, 20, 1>( output );
+	   test<100000, 1, 1, double, 2, 50, 1>( output );
+	   test<100000, 1, 1, double, 2, 100, 1>( output );
+	   test<100000, 1, 1, double, 2, 500, 1>( output );
+	   test<100000, 1, 1, double, 2, 1000, 1>( output );
+		//n_pts = 500000
+	   test<500000, 1, 1, double, 2, 10, 1>( output );
+	   test<500000, 1, 1, double, 2, 20, 1>( output );
+	   test<500000, 1, 1, double, 2, 50, 1>( output );
+	   test<500000, 1, 1, double, 2, 100, 1>( output );
+	   test<500000, 1, 1, double, 2, 500, 1>( output );
+	}
+	//dim = 2
+	{
+		//n_pts = 1000
+	   test<1000, 2, 1, double, 2, 10,1>( output );
+	   test<1000, 2, 1, double, 2, 20,1>( output);
+	   test<1000, 2, 1, double, 2, 50,1>( output);
+	   test<1000, 2, 1, double, 2, 100,1>( output);
+		//n_pts = 5000
+	   test<5000, 2, 1, double, 2, 10,1>( output);
+	   test<5000, 2, 1, double, 2, 20,1>( output);
+	   test<5000, 2, 1, double, 2, 50,1>( output);
+	   test<5000, 2, 1, double, 2, 100,1>( output);
+		//n_pts = 10000
+	   test<10000, 2, 1, double, 2, 10,1>( output);
+	   test<10000, 2, 1, double, 2, 20,1>( output);
+	   test<10000, 2, 1, double, 2, 50,1>( output);
+	   test<10000, 2, 1, double, 2, 100,1>( output);
+		//n_pts = 50000
+	   test<50000, 2, 1, double, 2, 10,1>( output);
+	   test<50000, 2, 1, double, 2, 20,1>( output);
+	   test<50000, 2, 1, double, 2, 50,1>( output);
+	   test<50000, 2, 1, double, 2, 100,1>( output);
+	   test<50000, 2, 1, double, 2, 500,1>( output);
+		//n_pts = 100000
+	   test<100000, 2, 1, double, 2, 10,1>( output);
+	   test<100000, 2, 1, double, 2, 20,1>( output);
+	   test<100000, 2, 1, double, 2, 50,1>( output);
+	   test<100000, 2, 1, double, 2, 100,1>( output);
+	   test<100000, 2, 1, double, 2, 500,1>( output);
+	   test<100000, 2, 1, double, 2, 1000,1>( output);
+		//n_pts = 500000
+	   test<500000, 2, 1, double, 2, 10,1>( output);
+	   test<500000, 2, 1, double, 2, 20,1>( output);
+	   test<500000, 2, 1, double, 2, 50,1>( output);
+	   test<500000, 2, 1, double, 2, 100,1>( output);
+	   test<500000, 2, 1, double, 2, 500,1>( output);
+	}
+	//dim = 3
+	{
+		//n_pts = 1000
+	   test<1000,3, 1, double, 2, 10,1>( output);
+	   test<1000,3, 1, double, 2, 20,1>( output);
+	   test<1000,3, 1, double, 2, 50,1>( output);
+	   test<1000,3, 1, double, 2, 100,1>( output);
+		//n_pts = 5000
+	   test<5000,3, 1, double, 2, 10,1>( output);
+	   test<5000,3, 1, double, 2, 20,1>( output);
+	   test<5000,3, 1, double, 2, 50,1>( output);
+	   test<5000, 3, 1, double, 2, 100,1>( output);
+		//n_pts = 10000
+	   test<10000,3, 1, double, 2, 10,1>( output);
+	   test<10000,3, 1, double, 2, 20,1>( output);
+	   test<10000,3, 1, double, 2, 50,1>( output);
+	   test<10000,3, 1, double, 2, 100,1>( output);
+		//n_pts = 50000
+	   test<50000,3, 1, double, 2, 10,1>( output);
+	   test<50000,3, 1, double, 2, 20,1>( output);
+	   test<50000,3, 1, double, 2, 50,1>( output);
+	   test<50000,3, 1, double, 2, 100,1>( output);
+	   test<50000,3, 1, double, 2, 500,1>( output);
+		//n_pts = 100000
+	   test<100000,3, 1, double, 2, 10,1>( output);
+	   test<100000,3, 1, double, 2, 20,1>( output);
+	   test<100000,3, 1, double, 2, 50,1>( output);
+	   test<100000,3, 1, double, 2, 100,1>( output);
+	   test<100000,3, 1, double, 2, 500,1>( output);
+	   test<100000,3, 1, double, 2, 1000,1>( output);
+		//n_pts = 500000
+	   test<500000,3, 1, double, 2, 10,1>( output);
+	   test<500000,3, 1, double, 2, 20,1>( output);
+	   test<500000,3, 1, double, 2, 50,1>( output);
+	   test<500000,3, 1, double, 2, 100,1>( output);
+	}
+
+	return 0;
+}
+
 
 
 int main() {
 	std::cout << "OPTICS Benchmark" << std::endl;
 
-	//test<10000, 20, 100 * 100, double, 3, 1>( 10 );
-
+	//test<10000, 20, 100 * 100, double, 2, 1>( 10 );
 	
-	std::cout << "--- 2 dim ---" << std::endl;
+	/*std::cout << "--- 2 dim ---" << std::endl;
 	test<100000, 2, 100 * 100, double, 10, 1>( 10 );
 	std::cout << std::endl << "--- 3 dim ---" << std::endl;
 	test<100000, 3, 100 * 100, double, 10, 1>( 10 );
@@ -117,6 +242,8 @@ int main() {
 	test<100000, 6, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 10 dim ---" << std::endl;
 	test<10000, 10, 100 * 100, double, 5, 1>( 10 );
+	std::cout << std::endl << "--- 15 dim ---" << std::endl;
+	test<10000, 15, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 20 dim ---" << std::endl;
 	test<10000, 20, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 64 dim ---" << std::endl;
@@ -125,6 +252,10 @@ int main() {
 	test<1000, 128, 100 * 100, double, 5, 1>( 10 );
 	std::cout << std::endl << "--- 512 dim ---" << std::endl;
 	test<1000, 512, 100 * 100, double, 5, 1>( 10 );
+	*/
+
+	test_all();
+
 
 	return 0;
 

@@ -16,10 +16,10 @@ public:
    enum TimeFormat{ NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS };
 
    Stopwatch(): start_time(), laps({}) {
-      start();
+      restart();
    }
 
-   void start(){
+   void restart(){
       start_time = std::chrono::high_resolution_clock::now();
       laps = {start_time};
    }

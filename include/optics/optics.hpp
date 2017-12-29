@@ -406,9 +406,13 @@ PointCloud<T, dimension> toPointCloud( const std::vector<Point<T, dimension>>& p
 }
 
 
-template<std::size_t n_points, typename T, std::size_t dimension, std::size_t n_threads = 1>
-std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, const std::size_t min_pts, double epsilon = -1.0 ) {
+enum RadiusSearchMethod { NANOFLANN, KDTREE, BOOSTRSTAR };
+static const RadiusSearchMethod method = KDTREE;
 
+
+template<std::size_t n_points, typename T, std::size_t dimension, std::size_t n_threads = 1>
+std::vector<reachability_dist> compute_reachability_dists( const std::vector<std::array<T, dimension>>& points, std::size_t min_pts, double epsilon = -1.0 ) {
+	
 	static_assert(n_threads >= 1, "Number of threads must be >= 1");
 	static_assert(std::is_signed<T>::value, "Type not allowed. Only Integers, Float & Double supported");
 	static_assert(std::is_convertible<T,double>::value, "Point type 'T' must be convertible to double!" );
@@ -432,17 +436,19 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 	ordered_list.reserve( points.size() );
 	std::vector<double> reachability( points.size(), -1.0f );
 	
-	int method = 2; // 0 = nanoflann, 1 = RTree, 2 = KDTree
+   
 
 	std::vector<std::vector<std::size_t>> neighbors;
-	if ( method == 0 ) {
-		//nanoflann
+	switch(method){
+	case NANOFLANN:
+	{
+		std::cout << "RadiusSearchMethod: Nanoflann" << std::endl;
 		const PointCloud<T, dimension> cloud = toPointCloud( points );
 		auto index = create_nanoflann_tree<T, dimension>( cloud );
 
 		if ( n_threads == 1 ) {
 			neighbors = fplus::transform(
-				[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+				[&index, epsilon]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
 			{ return find_neighbor_indices_nanoflann<T, dimension>( index, point, epsilon ); },
 				points
 			);
@@ -451,21 +457,23 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 			neighbors =
 				fplus::transform_parallelly_n_threads(
 					n_threads,
-					[&index, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+					[&index, epsilon]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
 			{ return find_neighbor_indices_nanoflann<T, dimension>( index, point, epsilon ); },
 					points
 				);
 		}
+		break;
 	}
-	else if ( method == 1 ){
-		//RTree
+	case BOOSTRSTAR :
+	{
+		std::cout << "RadiusSearchMethod: Boost Rstar" << std::endl;
 		const auto rtree = initialize_rtree( points );
 
 		//Compute all neighbors parallely beforehand
 
 		if ( n_threads == 1 ) {
 			neighbors = fplus::transform(
-				[&rtree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+				[&rtree, epsilon]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
 			{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
 				points
 			);
@@ -474,20 +482,22 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 			neighbors =
 				fplus::transform_parallelly_n_threads(
 					n_threads,
-					[&rtree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+					[&rtree, epsilon]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
 			{ return find_neighbor_indices_rtree( point, epsilon, rtree ); },
 					points
 				);
 		}
+		break;
 	}
-	else {
-		assert( method == 2 );
-		constexpr std::size_t min_points_per_node = 4;//TODO: configurable? Optimum?
+	case KDTREE:
+	{
+		std::cout << "RadiusSearchMethod: MyKDTree" << std::endl;
+		constexpr std::size_t min_points_per_node = 8;//TODO: configurable? Optimum?
 		const auto kd_tree = kdt::make_KDTree<T, dimension, n_points, min_points_per_node>( points );
-		
+
 		if ( n_threads == 1 ) {
 			neighbors = fplus::transform(
-				[&kd_tree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+				[&kd_tree, epsilon]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
 			{ return find_neighbor_indices_kd_tree( point, epsilon, *kd_tree );
 			}, points
 			);
@@ -496,13 +506,17 @@ std::vector<reachability_dist> compute_reachability_dists( const std::vector<std
 			neighbors =
 				fplus::transform_parallelly_n_threads(
 					n_threads,
-					[&kd_tree, epsilon, min_pts]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
+					[&kd_tree, epsilon]( const Point<T, dimension>& point ) -> std::vector<std::size_t>
 			{ return find_neighbor_indices_kd_tree( point, epsilon, *kd_tree );
 			},
 					points
 				);
 		}
-			
+		break;
+	}
+	default:
+		std::cerr << "RadiusSearchMethod " << method << " not implemented!" << std::endl;
+		std::exit( 11 );
 	}
 
 	assert( neighbors.size() == points.size() );

@@ -304,8 +304,6 @@ public:
 			make_KDTree<CoordsType, dimension, n_points, max_points_per_node>
 			( const std::vector<std::array<CoordsType, dimension>>& points_ );
 			
-	//friend std::make_unique<Me, const std::array<std::array<CoordsType, dimension>, n_points>&, const std::array<std::size_t, n_points>&>( const std::array<std::array<CoordsType, dimension>, n_points>&, const std::array<std::size_t, n_points>& );
-	
 	std::vector<std::size_t> radius_search( const Point& p, double radius ) const
 	{
 		std::vector<std::size_t> neighbors;
@@ -409,10 +407,12 @@ private:
 	void radius_search_ ( const Point& p, double radius, std::vector<std::size_t>& neighbors ) const  //TODO: make private
 	{
 		if ( p[split_dim] + radius < split ) {
-			return left.radius_search_( p, radius, neighbors );
+			left.radius_search_( p, radius, neighbors );
+            return;
 		}
 		else if ( p[split_dim] - radius >= split ) {
-			return right.radius_search_( p, radius, neighbors );
+			right.radius_search_( p, radius, neighbors );
+            return;
 		}
 		else {
 			left.radius_search_( p, radius, neighbors );
