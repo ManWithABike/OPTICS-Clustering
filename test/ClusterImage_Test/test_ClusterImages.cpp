@@ -32,7 +32,6 @@ inline std::vector<std::array<int, 2>> load_points_from_image( const std::string
 
 int main__()
 {
-	//std::string path = "/home/ip/Dokumente/ProgrammingProjects/OPTICS-Clustering/test/Opencv_ClusterImage_Test/ClusterImage_1.png";
 	std::string path = "./test/ClusterImage_Test/ClusterImage_1.ppm";
 	const auto points = load_points_from_image( path );
 	std::cout << "Extracted " << points.size() << " points from the image" << std::endl;
